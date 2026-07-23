@@ -9,7 +9,8 @@ Defines the foundational data structures for the toolkit:
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -80,7 +81,7 @@ class Assumptions:
     no_interference: bool = True
     correct_model_specification: bool = False
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Return list of violated assumptions."""
         violations = []
         if not self.unconfoundedness:
@@ -107,12 +108,12 @@ class CausalEstimand:
     estimand_type: str  # "ATE", "ATT", "ATC", "CATE", "LATE"
     treatment: str
     outcome: str
-    adjustment_set: List[str] = field(default_factory=list)
-    instrumental_variables: List[str] = field(default_factory=list)
-    mediators: List[str] = field(default_factory=list)
+    adjustment_set: list[str] = field(default_factory=list)
+    instrumental_variables: list[str] = field(default_factory=list)
+    mediators: list[str] = field(default_factory=list)
     assumptions: Assumptions = field(default_factory=Assumptions)
     identification_method: IdentificationStrategy = IdentificationStrategy.BACKDOOR
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
         return f"{self.estimand_type}: {self.expression}"
@@ -135,16 +136,16 @@ class CausalEstimate:
         diagnostics: Estimator-specific diagnostics dict
     """
 
-    value: Union[float, np.ndarray]
-    ci_lower: Union[float, np.ndarray]
-    ci_upper: Union[float, np.ndarray]
+    value: float | np.ndarray
+    ci_lower: float | np.ndarray
+    ci_upper: float | np.ndarray
     confidence_level: float = 0.95
     estimator: str = ""
-    standard_error: Optional[float] = None
-    p_value: Optional[float] = None
+    standard_error: float | None = None
+    p_value: float | None = None
     n_samples: int = 0
-    diagnostics: Dict[str, Any] = field(default_factory=dict)
-    estimand: Optional[CausalEstimand] = None
+    diagnostics: dict[str, Any] = field(default_factory=dict)
+    estimand: CausalEstimand | None = None
 
     def __post_init__(self):
         if isinstance(self.value, float):
@@ -159,14 +160,20 @@ class CausalEstimate:
         return self.p_value is not None and self.p_value < (1 - self.confidence_level)
 
     @property
-    def margin_of_error(self) -> Union[float, np.ndarray]:
+    def margin_of_error(self) -> float | np.ndarray:
         if isinstance(self.value, np.ndarray):
             return (self.ci_upper - self.ci_lower) / 2
         return float((self.ci_upper - self.ci_lower) / 2)
 
     def __str__(self) -> str:
         if isinstance(self.value, np.ndarray):
-            return f"CATE estimate (n={len(self.value)}): mean={self.value.mean():.4f}, CI=[{self.ci_lower.mean():.4f}, {self.ci_upper.mean():.4f}]"
+            mean_val = self.value.mean()
+            ci_l = self.ci_lower.mean()
+            ci_u = self.ci_upper.mean()
+            return (
+                f"CATE estimate (n={len(self.value)}): "
+                f"mean={mean_val:.4f}, CI=[{ci_l:.4f}, {ci_u:.4f}]"
+            )
         return f"{self.value:.4f} [{self.ci_lower:.4f}, {self.ci_upper:.4f}]"
 
 
@@ -179,7 +186,7 @@ class RefutationResult:
     test_statistic: float
     p_value: float
     rejected: bool
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
         status = "REJECTED" if self.rejected else "NOT REJECTED"
@@ -198,11 +205,11 @@ class CausalModel:
         data: pd.DataFrame,
         treatment: str,
         outcome: str,
-        graph: Optional[Any] = None,
-        common_causes: Optional[List[str]] = None,
-        instruments: Optional[List[str]] = None,
-        effect_modifiers: Optional[List[str]] = None,
-        assumptions: Optional[Assumptions] = None,
+        graph: Any | None = None,
+        common_causes: list[str] | None = None,
+        instruments: list[str] | None = None,
+        effect_modifiers: list[str] | None = None,
+        assumptions: Assumptions | None = None,
     ):
         self.data = data.copy()
         self.treatment = treatment
@@ -213,53 +220,37 @@ class CausalModel:
         self.effect_modifiers = effect_modifiers or []
         self.assumptions = assumptions or Assumptions()
 
-        self._estimand: Optional[CausalEstimand] = None
-        self._estimate: Optional[CausalEstimate] = None
-        self._refutations: List[RefutationResult] = []
+        self._estimand: CausalEstimand | None = None
+        self._estimate: CausalEstimate | None = None
+        self._refutations: list[RefutationResult] = []
 
     def identify(
-        self,
-        strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR,
-        **kwargs,
+        self, strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR, **kwargs
     ) -> CausalEstimand:
         """Identify causal estimand from graph and data."""
         # Delegates to DoWhy/EconML wrappers
         raise NotImplementedError("Use DoWhyWrapper or EconMLWrapper")
 
-    def estimate(
-        self,
-        estimator: EstimatorType,
-        **estimator_kwargs,
-    ) -> CausalEstimate:
-        """Estimate causal effect using specified estimator."""
-        raise NotImplementedError("Use DoWhyWrapper or EconMLWrapper")
-
     def refute(
-        self,
-        methods: List[RefutationMethod] = None,
-        **kwargs,
-    ) -> List[RefutationResult]:
+        self, methods: list[RefutationMethod] | None = None, **kwargs
+    ) -> list[RefutationResult]:
         """Run refutation tests."""
         raise NotImplementedError("Use DoWhyWrapper or EconMLWrapper")
 
-    def sensitivity_analysis(
-        self,
-        method: str = "cinelli_hazlett",
-        **kwargs,
-    ) -> Any:
+    def sensitivity_analysis(self, method: str = "cinelli_hazlett", **kwargs) -> Any:
         """Run sensitivity analysis."""
         raise NotImplementedError("Use SensitivityAnalyzer")
 
     @property
-    def estimand(self) -> Optional[CausalEstimand]:
+    def estimand(self) -> CausalEstimand | None:
         return self._estimand
 
     @property
-    def estimate(self) -> Optional[CausalEstimate]:
+    def estimate(self) -> CausalEstimate | None:
         return self._estimate
 
     @property
-    def refutations(self) -> List[RefutationResult]:
+    def refutations(self) -> list[RefutationResult]:
         return self._refutations
 
     def summary(self) -> str:

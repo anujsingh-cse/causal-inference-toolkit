@@ -10,13 +10,11 @@ Provides frequentist and Bayesian A/B testing with:
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from scipy import stats
-import warnings
-
-from causal_toolkit.core.base import CausalEstimate
 
 
 class TestType(str, Enum):
@@ -103,14 +101,14 @@ class ABTestResult:
     # Additional
     n_a: int
     n_b: int
-    power: Optional[float] = None
-    mde: Optional[float] = None  # Minimum detectable effect
+    power: float | None = None
+    mde: float | None = None  # Minimum detectable effect
 
     # Bayesian
-    prob_b_better: Optional[float] = None
-    rope_probability: Optional[float] = None
-    expected_loss_a: Optional[float] = None
-    expected_loss_b: Optional[float] = None
+    prob_b_better: float | None = None
+    rope_probability: float | None = None
+    expected_loss_a: float | None = None
+    expected_loss_b: float | None = None
 
     def __str__(self) -> str:
         sig = "✓ SIGNIFICANT" if self.p_value < (1 - self.confidence_level) else "✗ NOT SIGNIFICANT"
@@ -135,9 +133,7 @@ class ABTestAnalyzer:
     # ==================== Frequentist Tests ====================
 
     def proportion_ztest(
-        self,
-        data: ABTestData,
-        alternative: Alternative = Alternative.TWO_SIDED,
+        self, data: ABTestData, alternative: Alternative = Alternative.TWO_SIDED
     ) -> ABTestResult:
         """Two-proportion z-test for conversion rates."""
         from statsmodels.stats.proportion import proportions_ztest
@@ -182,8 +178,12 @@ class ABTestAnalyzer:
         from scipy.stats import ttest_ind_from_stats
 
         stat, pval = ttest_ind_from_stats(
-            data.mean_a, np.sqrt(data.var_a), data.n_a,
-            data.mean_b, np.sqrt(data.var_b), data.n_b,
+            data.mean_a,
+            np.sqrt(data.var_a),
+            data.n_a,
+            data.mean_b,
+            np.sqrt(data.var_b),
+            data.n_b,
             equal_var=equal_var,
             alternative=alternative.value,
         )
@@ -251,7 +251,7 @@ class ABTestAnalyzer:
         mde: float = 0.05,  # Minimum detectable effect (relative)
         alpha: float = 0.05,
         beta: float = 0.2,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Sequential Probability Ratio Test (SPRT) for proportions.
 
@@ -269,9 +269,11 @@ class ABTestAnalyzer:
         # In practice, need sequential data
         n_total = data.n_a + data.n_b
         successes_total = data.successes_a + data.successes_b
-        p_pool = successes_total / n_total if n_total > 0 else p0
+        _ = successes_total / n_total if n_total > 0 else p0
 
-        llr = successes_total * np.log(p1 / p0) + (n_total - successes_total) * np.log((1 - p1) / (1 - p0))
+        llr = successes_total * np.log(p1 / p0) + (n_total - successes_total) * np.log(
+            (1 - p1) / (1 - p0)
+        )
 
         if llr >= b:
             decision = "accept_h1"  # Treatment better
@@ -290,12 +292,8 @@ class ABTestAnalyzer:
         }
 
     def msprt(
-        self,
-        data: ABTestData,
-        mde: float = 0.05,
-        alpha: float = 0.05,
-        prior_strength: float = 1.0,
-    ) -> Dict[str, Any]:
+        self, data: ABTestData, mde: float = 0.05, alpha: float = 0.05, prior_strength: float = 1.0
+    ) -> dict[str, Any]:
         """
         Mixture SPRT (mSPRT) - Bayesian sequential test.
 
@@ -307,7 +305,7 @@ class ABTestAnalyzer:
         p0 = data.rate_a
         p1 = p0 * (1 + mde)
 
-        # Prior: Beta(α, β) centered at p0
+        # Prior: Beta(alpha, beta) centered at p0
         alpha_prior = prior_strength * p0
         beta_prior = prior_strength * (1 - p0)
 
@@ -420,7 +418,7 @@ class ABTestAnalyzer:
         alpha: float = 0.05,
         power: float = 0.8,
         ratio: float = 1.0,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calculate sample size needed for proportion test.
         """
@@ -438,19 +436,15 @@ class ABTestAnalyzer:
         }
 
     def mde_calculation(
-        self,
-        baseline_rate: float,
-        n_per_variant: int,
-        alpha: float = 0.05,
-        power: float = 0.8,
+        self, baseline_rate: float, n_per_variant: int, alpha: float = 0.05, power: float = 0.8
     ) -> float:
         """Calculate MDE given sample size."""
         from statsmodels.stats.power import NormalIndPower
-        from statsmodels.stats.proportion import proportion_effectsize
 
         analysis = NormalIndPower()
-        effect_size = analysis.solve_power(effect_size=None, nobs1=n_per_variant,
-                                           alpha=alpha, power=power)
+        effect_size = analysis.solve_power(
+            effect_size=None, nobs1=n_per_variant, alpha=alpha, power=power
+        )
         # Convert effect size back to MDE
         # effect_size = 2* = proportion_effectsize(p1, p2)
         # For small effects: proportion_effectsize ≈ (p2-p1)/sqrt(p1*(1-p1))
@@ -460,7 +454,7 @@ class ABTestAnalyzer:
 
     # ==================== Multiple Testing ====================
 
-    def bonferroni_correction(self, p_values: List[float], alpha: float = 0.05) -> Dict:
+    def bonferroni_correction(self, p_values: list[float], alpha: float = 0.05) -> dict:
         """Bonferroni correction for multiple comparisons."""
         k = len(p_values)
         adjusted_alpha = alpha / k
@@ -471,7 +465,7 @@ class ABTestAnalyzer:
             "adjusted_p_values": [min(p * k, 1.0) for p in p_values],
         }
 
-    def benjamini_hochberg(self, p_values: List[float], alpha: float = 0.05) -> Dict:
+    def benjamini_hochberg(self, p_values: list[float], alpha: float = 0.05) -> dict:
         """Benjamini-Hochberg FDR control."""
         k = len(p_values)
         sorted_indices = np.argsort(p_values)
@@ -481,10 +475,7 @@ class ABTestAnalyzer:
         rejected_sorted = sorted_p <= thresholds
 
         # Find largest k where p_(k) <= k*alpha/k
-        if not any(rejected_sorted):
-            max_rejected = -1
-        else:
-            max_rejected = np.where(rejected_sorted)[0].max()
+        max_rejected = -1 if not any(rejected_sorted) else np.where(rejected_sorted)[0].max()
 
         rejected = [False] * k
         if max_rejected >= 0:
@@ -494,7 +485,9 @@ class ABTestAnalyzer:
         return {
             "rejected": rejected,
             "threshold": alpha * (max_rejected + 1) / k if max_rejected >= 0 else 0,
-            "adjusted_p_values": np.array([min(p * k / (i + 1), 1.0) for i, p in enumerate(sorted_p)])[np.argsort(sorted_indices)].tolist(),
+            "adjusted_p_values": np.array(
+                [min(p * k / (i + 1), 1.0) for i, p in enumerate(sorted_p)]
+            )[np.argsort(sorted_indices)].tolist(),
         }
 
     # ==================== High-level API ====================
@@ -520,7 +513,7 @@ class ABTestAnalyzer:
             else:
                 return self.bayesian_normal(data, **kwargs)
         elif method == "sequential":
-            sprt_result = self.sprt(data, **kwargs)
+            self.sprt(data, **kwargs)
             # Return ABTestResult with sequential info
             return ABTestResult(
                 test_type=test_type,
@@ -528,7 +521,9 @@ class ABTestAnalyzer:
                 estimate_a=data.rate_a,
                 estimate_b=data.rate_b,
                 difference=data.rate_b - data.rate_a,
-                relative_difference=(data.rate_b - data.rate_a) / data.rate_a if data.rate_a > 0 else 0,
+                relative_difference=(data.rate_b - data.rate_a) / data.rate_a
+                if data.rate_a > 0
+                else 0,
                 statistic=0,
                 p_value=0,
                 ci_lower=0,
@@ -560,10 +555,7 @@ class ABTestAnalyzer:
 
         if test_type == TestType.PROPORTION:
             return ABTestData(
-                n_a=len(a_data),
-                successes_a=a_data.sum(),
-                n_b=len(b_data),
-                successes_b=b_data.sum(),
+                n_a=len(a_data), successes_a=a_data.sum(), n_b=len(b_data), successes_b=b_data.sum()
             )
         else:
             return ABTestData(
@@ -577,11 +569,8 @@ class ABTestAnalyzer:
 
 
 def evaluate_uplift(
-    uplift: np.ndarray,
-    treatment: np.ndarray,
-    outcome: np.ndarray,
-    n_bins: int = 10,
-) -> Dict[str, float]:
+    uplift: np.ndarray, treatment: np.ndarray, outcome: np.ndarray, n_bins: int = 10
+) -> dict[str, float]:
     """
     Evaluate uplift model using Qini, AUUC, etc.
 
@@ -596,7 +585,6 @@ def evaluate_uplift(
     """
     # Sort by predicted uplift (descending)
     order = np.argsort(uplift)[::-1]
-    uplift_sorted = uplift[order]
     treatment_sorted = treatment[order]
     outcome_sorted = outcome[order]
 
@@ -632,7 +620,11 @@ def evaluate_uplift(
         control_outcome = out[treat == 0].mean() if (1 - treat).sum() > 0 else 0
         random_gains.append(treated_outcome - control_outcome)
 
-    random_y = np.cumsum(random_gains) / np.sum(np.abs(random_gains)) if np.sum(np.abs(random_gains)) > 0 else np.zeros(n_bins)
+    random_y = (
+        np.cumsum(random_gains) / np.sum(np.abs(random_gains))
+        if np.sum(np.abs(random_gains)) > 0
+        else np.zeros(n_bins)
+    )
     auuc = np.trapz(y - random_y, x)
 
     return {

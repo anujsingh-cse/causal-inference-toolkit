@@ -5,12 +5,12 @@ Provides commands for estimation, sensitivity analysis, A/B testing,
 uplift modeling, graph visualization, and counterfactual estimation.
 """
 
-import typer
-from typing import Optional, List
-from pathlib import Path
-import pandas as pd
-import yaml
 import json
+from pathlib import Path
+
+import pandas as pd
+import typer
+import yaml
 
 app = typer.Typer(
     name="causal-toolkit",
@@ -25,18 +25,19 @@ def estimate(
     config: Path = typer.Option(..., "--config", "-c", help="YAML config file"),
     data: Path = typer.Option(..., "--data", "-d", help="Input data CSV"),
     out: Path = typer.Option("./results", "--out", "-o", help="Output directory"),
-    treatment: Optional[str] = typer.Option(None, "--treatment", "-t", help="Treatment column"),
-    outcome: Optional[str] = typer.Option(None, "--outcome", "-y", help="Outcome column"),
-    common_causes: Optional[List[str]] = typer.Option(None, "--confounders", help="Confounder columns"),
+    treatment: str | None = typer.Option(None, "--treatment", "-t", help="Treatment column"),
+    outcome: str | None = typer.Option(None, "--outcome", "-y", help="Outcome column"),
+    common_causes: list[str] | None = typer.Option(
+        None, "--confounders", help="Confounder columns"
+    ),
     estimator: str = typer.Option("linear_regression", "--estimator", "-e", help="Estimator type"),
 ):
     """Estimate causal effect from config and data."""
-    from causal_toolkit.core.base import CausalModel, IdentificationStrategy, EstimatorType
+    from causal_toolkit.core.base import CausalModel, EstimatorType, IdentificationStrategy
     from causal_toolkit.wrappers.dowhy import DoWhyWrapper
-    from causal_toolkit.wrappers.econml import EconMLWrapper
 
     typer.echo(f"Loading config from {config}...")
-    with open(config) as f:
+    with config.open() as f:
         cfg = yaml.safe_load(f)
 
     typer.echo(f"Loading data from {data}...")
@@ -45,7 +46,9 @@ def estimate(
     # Override from CLI if provided
     t = treatment or cfg.get("pipeline", {}).get("identification", {}).get("treatment")
     y = outcome or cfg.get("pipeline", {}).get("identification", {}).get("outcome")
-    cc = common_causes or cfg.get("pipeline", {}).get("identification", {}).get("adjustment_set", [])
+    cc = common_causes or cfg.get("pipeline", {}).get("identification", {}).get(
+        "adjustment_set", []
+    )
 
     if not t or not y:
         typer.echo("[red]Error: treatment and outcome must be specified[/red]")
@@ -54,18 +57,16 @@ def estimate(
     typer.echo(f"Treatment: {t}, Outcome: {y}, Confounders: {cc}")
 
     # Build model
-    model = CausalModel(
-        data=df,
-        treatment=t,
-        outcome=y,
-        common_causes=cc,
-    )
+    model = CausalModel(data=df, treatment=t, outcome=y, common_causes=cc)
 
     # Identify
     try:
         from causal_toolkit.core.base import IdentificationStrategy
-        strategy = IdentificationStrategy(cfg.get("pipeline", {}).get("identification", {}).get("strategy", "backdoor"))
-    except:
+
+        strategy = IdentificationStrategy(
+            cfg.get("pipeline", {}).get("identification", {}).get("strategy", "backdoor")
+        )
+    except Exception:
         strategy = IdentificationStrategy.BACKDOOR
 
     wrapper = DoWhyWrapper(model)
@@ -77,7 +78,7 @@ def estimate(
         est_type = EstimatorType[estimator.upper()]
     except KeyError:
         typer.echo(f"[red]Unknown estimator: {estimator}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     estimate = wrapper.estimate(est_type)
     typer.echo(f"Estimate: {estimate}")
@@ -92,14 +93,20 @@ def estimate(
     results = {
         "estimand": str(estimand),
         "estimate": {
-            "value": float(estimate.value) if hasattr(estimate.value, '__float__') else estimate.value.tolist(),
-            "ci_lower": float(estimate.ci_lower) if hasattr(estimate.ci_lower, '__float__') else estimate.ci_lower.tolist(),
-            "ci_upper": float(estimate.ci_upper) if hasattr(estimate.ci_upper, '__float__') else estimate.ci_upper.tolist(),
+            "value": float(estimate.value)
+            if hasattr(estimate.value, "__float__")
+            else estimate.value.tolist(),
+            "ci_lower": float(estimate.ci_lower)
+            if hasattr(estimate.ci_lower, "__float__")
+            else estimate.ci_lower.tolist(),
+            "ci_upper": float(estimate.ci_upper)
+            if hasattr(estimate.ci_upper, "__float__")
+            else estimate.ci_upper.tolist(),
             "estimator": estimate.estimator,
         },
         "refutations": [str(r) for r in refutations],
     }
-    with open(out / "results.json", "w") as f:
+    with (out / "results.json").open("w") as f:
         json.dump(results, f, indent=2)
 
     typer.echo(f"[green]Results saved to {out}/results.json[/green]")
@@ -110,14 +117,20 @@ def sensitivity(
     data: Path = typer.Option(..., "--data", "-d", help="Input data CSV"),
     treatment: str = typer.Option(..., "--treatment", "-t", help="Treatment column"),
     outcome: str = typer.Option(..., "--outcome", "-y", help="Outcome column"),
-    confounders: Optional[List[str]] = typer.Option(None, "--confounders", "-c", help="Confounder columns"),
-    method: str = typer.Option("all", "--method", "-m", help="Method: rosenbaum, cinelli_hazlett, evalue, all"),
-    estimate: Optional[float] = typer.Option(None, "--estimate", "-e", help="Point estimate (optional)"),
-    se: Optional[float] = typer.Option(None, "--se", help="Standard error (optional)"),
+    confounders: list[str] | None = typer.Option(
+        None, "--confounders", "-c", help="Confounder columns"
+    ),
+    method: str = typer.Option(
+        "all", "--method", "-m", help="Method: rosenbaum, cinelli_hazlett, evalue, all"
+    ),
+    estimate: float | None = typer.Option(
+        None, "--estimate", "-e", help="Point estimate (optional)"
+    ),
+    se: float | None = typer.Option(None, "--se", help="Standard error (optional)"),
     out: Path = typer.Option("./sensitivity", "--out", "-o", help="Output directory"),
 ):
     """Run sensitivity analysis."""
-    from causal_toolkit.analysis.sensitivity import SensitivityAnalyzer, run_sensitivity_suite
+    from causal_toolkit.analysis.sensitivity import run_sensitivity_suite
     from causal_toolkit.core.base import CausalEstimate, CausalModel
 
     typer.echo(f"Loading data from {data}...")
@@ -125,17 +138,14 @@ def sensitivity(
 
     # Build minimal model for sensitivity
     model = CausalModel(
-        data=df,
-        treatment=treatment,
-        outcome=outcome,
-        common_causes=confounders or [],
+        data=df, treatment=treatment, outcome=outcome, common_causes=confounders or []
     )
 
     # Need an estimate to analyze
     if estimate is None or se is None:
         # Run a quick estimation first
-        from causal_toolkit.wrappers.dowhy import DoWhyWrapper
         from causal_toolkit.core.base import EstimatorType
+        from causal_toolkit.wrappers.dowhy import DoWhyWrapper
 
         wrapper = DoWhyWrapper(model)
         wrapper.identify()
@@ -175,7 +185,7 @@ def sensitivity(
             for r in analyzer.results
         ],
     }
-    with open(out / "sensitivity.json", "w") as f:
+    with (out / "sensitivity.json").open("w") as f:
         json.dump(results, f, indent=2)
 
     typer.echo(f"[green]Sensitivity results saved to {out}/sensitivity.json[/green]")
@@ -188,46 +198,60 @@ def ab_test(
     outcome_col: str = typer.Option(..., "--outcome", "-y", help="Outcome column"),
     variant_a: str = typer.Option(..., "--control", help="Control variant name"),
     variant_b: str = typer.Option(..., "--treatment", help="Treatment variant name"),
-    method: str = typer.Option("frequentist", "--method", "-m", help="Method: frequentist, bayesian, sequential"),
+    method: str = typer.Option(
+        "frequentist", "--method", "-m", help="Method: frequentist, bayesian, sequential"
+    ),
     test_type: str = typer.Option("proportion", "--type", help="Test type: proportion, mean"),
     alpha: float = typer.Option(0.05, "--alpha", help="Significance level"),
     out: Path = typer.Option("./ab_test", "--out", "-o", help="Output directory"),
 ):
     """Run A/B test analysis."""
-    from causal_toolkit.analysis.ab_test import ABTestAnalyzer, ABTestData, TestType, Alternative
+    from causal_toolkit.analysis.ab_test import ABTestAnalyzer, TestType
 
     typer.echo(f"Loading data from {data}...")
     df = pd.read_csv(data)
 
     analyzer = ABTestAnalyzer(confidence_level=1 - alpha)
-    ab_data = analyzer.from_dataframe(df, variant_col, outcome_col, variant_a, variant_b,
-                                       TestType.PROPORTION if test_type == "proportion" else TestType.MEAN)
+    ab_data = analyzer.from_dataframe(
+        df,
+        variant_col,
+        outcome_col,
+        variant_a,
+        variant_b,
+        TestType.PROPORTION if test_type == "proportion" else TestType.MEAN,
+    )
 
     typer.echo(f"Running {method} {test_type} test...")
-    result = analyzer.analyze(ab_data, TestType.PROPORTION if test_type == "proportion" else TestType.MEAN, method)
+    result = analyzer.analyze(
+        ab_data, TestType.PROPORTION if test_type == "proportion" else TestType.MEAN, method
+    )
 
     typer.echo(f"\n{result}")
 
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "ab_test.json", "w") as f:
-        json.dump({
-            "variant_a": variant_a,
-            "variant_b": variant_b,
-            "method": method,
-            "test_type": test_type,
-            "estimate_a": result.estimate_a,
-            "estimate_b": result.estimate_b,
-            "difference": result.difference,
-            "relative_difference": result.relative_difference,
-            "p_value": result.p_value,
-            "ci_lower": result.ci_lower,
-            "ci_upper": result.ci_upper,
-            "confidence_level": result.confidence_level,
-            "n_a": result.n_a,
-            "n_b": result.n_b,
-            "prob_b_better": result.prob_b_better,
-            "rope_probability": result.rope_probability,
-        }, f, indent=2)
+        json.dump(
+            {
+                "variant_a": variant_a,
+                "variant_b": variant_b,
+                "method": method,
+                "test_type": test_type,
+                "estimate_a": result.estimate_a,
+                "estimate_b": result.estimate_b,
+                "difference": result.difference,
+                "relative_difference": result.relative_difference,
+                "p_value": result.p_value,
+                "ci_lower": result.ci_lower,
+                "ci_upper": result.ci_upper,
+                "confidence_level": result.confidence_level,
+                "n_a": result.n_a,
+                "n_b": result.n_b,
+                "prob_b_better": result.prob_b_better,
+                "rope_probability": result.rope_probability,
+            },
+            f,
+            indent=2,
+        )
 
     typer.echo(f"[green]A/B test results saved to {out}/ab_test.json[/green]")
 
@@ -237,8 +261,10 @@ def uplift(
     data: Path = typer.Option(..., "--data", "-d", help="Input data CSV"),
     treatment: str = typer.Option(..., "--treatment", "-t", help="Treatment column"),
     outcome: str = typer.Option(..., "--outcome", "-y", help="Outcome column"),
-    covariates: List[str] = typer.Option(..., "--covariates", "-c", help="Covariate columns"),
-    model: str = typer.Option("causal_forest", "--model", "-m", help="Model: causal_forest, two_model, dr_learner"),
+    covariates: list[str] = typer.Option(..., "--covariates", "-c", help="Covariate columns"),
+    model: str = typer.Option(
+        "causal_forest", "--model", "-m", help="Model: causal_forest, two_model, dr_learner"
+    ),
     plot: str = typer.Option("qini", "--plot", "-p", help="Plot type: qini, gain"),
     out: Path = typer.Option("./uplift", "--out", "-o", help="Output directory"),
 ):
@@ -253,24 +279,22 @@ def uplift(
     uplift_modeler.fit(method=model)
 
     # Predict on same data for evaluation
-    uplift = uplift_modeler.predict_uplift()
-    metrics = uplift_modeler.evaluate(
-        uplift_modeler._X, df[treatment].values, df[outcome].values
-    )
+    uplift_modeler.predict_uplift()
+    metrics = uplift_modeler.evaluate(uplift_modeler._X, df[treatment].values, df[outcome].values)
 
     typer.echo(f"Uplift Metrics: {metrics}")
 
     out.mkdir(parents=True, exist_ok=True)
-    with open(out / "uplift_metrics.json", "w") as f:
+    with (out / "uplift_metrics.json").open("w") as f:
         json.dump(metrics, f, indent=2)
 
     # Plot
     if plot == "qini":
         fig = uplift_modeler.plot_qini(uplift_modeler._X, df[treatment].values, df[outcome].values)
-        fig.savefig(out / "qini_curve.png", dpi=300, bbox_inches='tight')
+        fig.savefig(out / "qini_curve.png", dpi=300, bbox_inches="tight")
     elif plot == "gain":
         fig = uplift_modeler.plot_gain(uplift_modeler._X, df[treatment].values, df[outcome].values)
-        fig.savefig(out / "gain_curve.png", dpi=300, bbox_inches='tight')
+        fig.savefig(out / "gain_curve.png", dpi=300, bbox_inches="tight")
 
     typer.echo(f"[green]Uplift results saved to {out}/[/green]")
 
@@ -278,14 +302,16 @@ def uplift(
 @app.command()
 def graph(
     config: Path = typer.Option(..., "--config", "-c", help="YAML config with edges and roles"),
-    render: str = typer.Option("matplotlib", "--render", "-r", help="Renderer: matplotlib, plotly, graphviz"),
+    render: str = typer.Option(
+        "matplotlib", "--render", "-r", help="Renderer: matplotlib, plotly, graphviz"
+    ),
     highlight_backdoor: bool = typer.Option(True, "--backdoor/--no-backdoor"),
     out: Path = typer.Option("./graph", "--out", "-o", help="Output file/directory"),
 ):
     """Visualize causal DAG."""
     from causal_toolkit.visualization.graphs import CausalGraphVisualizer
 
-    with open(config) as f:
+    with config.open() as f:
         cfg = yaml.safe_load(f)
 
     edges = cfg.get("edges", [])
@@ -318,13 +344,13 @@ def graph(
 
     if render == "matplotlib":
         fig = viz.plot_dag(highlight_backdoor=highlight_backdoor)
-        fig.savefig(out.with_suffix(".png"), dpi=300, bbox_inches='tight')
+        fig.savefig(out.with_suffix(".png"), dpi=300, bbox_inches="tight")
     elif render == "plotly":
         fig = viz.plot_interactive(highlight_backdoor=highlight_backdoor)
         fig.write_html(out.with_suffix(".html"))
     elif render == "graphviz":
         dot = viz.to_graphviz()
-        dot.render(out, format='png', cleanup=True)
+        dot.render(out, format="png", cleanup=True)
 
     typer.echo(f"[green]Graph saved to {out}.[/green]")
 
@@ -336,12 +362,14 @@ def counterfactual(
     treatment: float = typer.Option(..., "--treatment", "-t", help="Treatment value"),
     outcome_col: str = typer.Option(..., "--outcome", "-y", help="Outcome column"),
     treatment_col: str = typer.Option(..., "--treatment-col", help="Treatment column"),
-    covariates: List[str] = typer.Option(..., "--covariates", "-c", help="Covariate columns"),
+    covariates: list[str] = typer.Option(..., "--covariates", "-c", help="Covariate columns"),
     model: str = typer.Option("g_computation", "--model", "-m", help="Model: g_computation, tmle"),
     out: Path = typer.Option("./counterfactual", "--out", "-o", help="Output directory"),
 ):
     """Estimate individual counterfactual outcome."""
-    typer.echo("[yellow]Counterfactual estimation requires fitted outcome models. Not yet implemented.[/yellow]")
+    typer.echo(
+        "[yellow]Counterfactual estimation requires fitted outcome models. Not yet implemented.[/yellow]"
+    )
     raise typer.Exit(1)
 
 
@@ -372,11 +400,13 @@ def power(
 
 @app.command()
 def demo(
-    dataset: str = typer.Option("ihdp", "--dataset", help="Dataset: ihdp, lalonde, criteo_uplift, synthetic"),
+    dataset: str = typer.Option(
+        "ihdp", "--dataset", help="Dataset: ihdp, lalonde, criteo_uplift, synthetic"
+    ),
     out: Path = typer.Option("./demo", "--out", "-o", help="Output directory"),
 ):
     """Run demo pipeline on built-in dataset."""
-    from causal_toolkit.utils.data import load_dataset, create_synthetic_data
+    from causal_toolkit.utils.data import create_synthetic_data, load_dataset
 
     typer.echo(f"Running demo on {dataset} dataset...")
 
@@ -393,9 +423,8 @@ def demo(
     # Quick analysis
     if dataset in ["ihdp", "lalonde", "synthetic"]:
         typer.echo("\nQuick ATE estimation...")
-        from causal_toolkit.core.base import CausalModel
+        from causal_toolkit.core.base import CausalModel, EstimatorType, IdentificationStrategy
         from causal_toolkit.wrappers.dowhy import DoWhyWrapper
-        from causal_toolkit.core.base import EstimatorType, IdentificationStrategy
 
         treatment = "treatment"
         outcome = "outcome"
@@ -417,8 +446,12 @@ def demo(
     typer.echo(f"\n[green]Demo completed. Data in {out}/[/green]")
     typer.echo("Next steps:")
     typer.echo(f"  causal-toolkit estimate --config config.yaml --data {out}/{dataset}.csv")
-    typer.echo(f"  causal-toolkit sensitivity --data {out}/{dataset}.csv --treatment {treatment} --outcome {outcome}")
-    typer.echo(f"  causal-toolkit ab_test --data {out}/{dataset}.csv --variant treatment --outcome {outcome} --control 0 --treatment 1")
+    typer.echo(
+        f"  causal-toolkit sensitivity --data {out}/{dataset}.csv --treatment {treatment} --outcome {outcome}"
+    )
+    typer.echo(
+        f"  causal-toolkit ab_test --data {out}/{dataset}.csv --variant treatment --outcome {outcome} --control 0 --treatment 1"
+    )
 
 
 if __name__ == "__main__":

@@ -5,16 +5,12 @@ Provides CLI commands for estimation, sensitivity analysis, A/B testing,
 uplift modeling, graph visualization, and counterfactual analysis.
 """
 
-import typer
-from typing import Optional, List
 from pathlib import Path
+
 import pandas as pd
-import numpy as np
+import typer
 import yaml
-import warnings
 from rich.console import Console
-from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 app = typer.Typer(
     name="causal-toolkit",
@@ -54,16 +50,20 @@ def sensitivity(
     data: Path = typer.Option(..., "--data", "-d", help="Input data CSV"),
     treatment: str = typer.Option(..., "--treatment", "-t", help="Treatment column"),
     outcome: str = typer.Option(..., "--outcome", "-y", help="Outcome column"),
-    covariates: List[str] = typer.Option([], "--covariates", "-x", help="Covariate columns"),
-    method: str = typer.Option("all", "--method", "-m", help="Method: rosenbaum, cinelli_hazlett, evalue, all"),
+    covariates: list[str] = typer.Option([], "--covariates", "-x", help="Covariate columns"),
+    method: str = typer.Option(
+        "all", "--method", "-m", help="Method: rosenbaum, cinelli_hazlett, evalue, all"
+    ),
     gamma_max: float = typer.Option(3.0, "--gamma-max", help="Max Gamma for Rosenbaum"),
-    benchmark: Optional[List[str]] = typer.Option(None, "--benchmark", "-b", help="Benchmark covariates"),
-    out: Optional[Path] = typer.Option(None, "--out", "-o", help="Output plot file"),
+    benchmark: list[str] | None = typer.Option(
+        None, "--benchmark", "-b", help="Benchmark covariates"
+    ),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Output plot file"),
 ):
     """
     Run sensitivity analysis on estimated causal effect.
     """
-    console.print(f"[bold green]Running sensitivity analysis[/bold green]")
+    console.print("[bold green]Running sensitivity analysis[/bold green]")
     console.print(f"Method: {method}")
 
     df = pd.read_csv(data)
@@ -80,7 +80,9 @@ def ab_test(
     variant_a: str = typer.Option(..., "--control", "-a", help="Control variant name"),
     variant_b: str = typer.Option(..., "--treatment", "-b", help="Treatment variant name"),
     test_type: str = typer.Option("proportion", "--type", help="Test type: proportion, mean"),
-    method: str = typer.Option("frequentist", "--method", "-m", help="Method: frequentist, bayesian, sequential"),
+    method: str = typer.Option(
+        "frequentist", "--method", "-m", help="Method: frequentist, bayesian, sequential"
+    ),
     confidence: float = typer.Option(0.95, "--confidence", "-c", help="Confidence level"),
     mde: float = typer.Option(0.05, "--mde", help="Minimum detectable effect (relative)"),
     rope: float = typer.Option(0.01, "--rope", help="ROPE width for Bayesian"),
@@ -88,7 +90,7 @@ def ab_test(
     """
     Run A/B test analysis.
     """
-    console.print(f"[bold green]Running A/B test[/bold green]")
+    console.print("[bold green]Running A/B test[/bold green]")
     console.print(f"{variant_a} vs {variant_b} on {outcome}")
 
     df = pd.read_csv(data)
@@ -102,15 +104,20 @@ def uplift(
     data: Path = typer.Option(..., "--data", "-d", help="Input data CSV"),
     treatment: str = typer.Option(..., "--treatment", "-t", help="Treatment column"),
     outcome: str = typer.Option(..., "--outcome", "-y", help="Outcome column"),
-    covariates: List[str] = typer.Option([], "--covariates", "-x", help="Covariate columns"),
-    model: str = typer.Option("causal_forest", "--model", "-m", help="Model: causal_forest, t_learner, s_learner, x_learner, dr_learner"),
+    covariates: list[str] = typer.Option([], "--covariates", "-x", help="Covariate columns"),
+    model: str = typer.Option(
+        "causal_forest",
+        "--model",
+        "-m",
+        help="Model: causal_forest, t_learner, s_learner, x_learner, dr_learner",
+    ),
     plot: str = typer.Option("qini", "--plot", "-p", help="Plot type: qini, gain, both"),
-    out: Optional[Path] = typer.Option(None, "--out", "-o", help="Output plot file"),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Output plot file"),
 ):
     """
     Fit and evaluate uplift model.
     """
-    console.print(f"[bold green]Running uplift modeling[/bold green]")
+    console.print("[bold green]Running uplift modeling[/bold green]")
     console.print(f"Model: {model}, Plot: {plot}")
 
     df = pd.read_csv(data)
@@ -124,21 +131,25 @@ def graph(
     dag: Path = typer.Option(..., "--dag", help="DOT file or edge list CSV"),
     treatment: str = typer.Option(..., "--treatment", "-t", help="Treatment variable"),
     outcome: str = typer.Option(..., "--outcome", "-y", help="Outcome variable"),
-    covariates: List[str] = typer.Option([], "--covariates", "-x", help="Confounder variables"),
-    instruments: List[str] = typer.Option([], "--instruments", "-z", help="Instrumental variables"),
-    mediators: List[str] = typer.Option([], "--mediators", help="Mediator variables"),
-    render: str = typer.Option("matplotlib", "--render", "-r", help="Renderer: matplotlib, plotly, graphviz"),
-    highlight_backdoor: bool = typer.Option(True, "--backdoor/--no-backdoor", help="Highlight backdoor paths"),
+    covariates: list[str] = typer.Option([], "--covariates", "-x", help="Confounder variables"),
+    instruments: list[str] = typer.Option([], "--instruments", "-z", help="Instrumental variables"),
+    mediators: list[str] = typer.Option([], "--mediators", help="Mediator variables"),
+    render: str = typer.Option(
+        "matplotlib", "--render", "-r", help="Renderer: matplotlib, plotly, graphviz"
+    ),
+    highlight_backdoor: bool = typer.Option(
+        True, "--backdoor/--no-backdoor", help="Highlight backdoor paths"
+    ),
     find_adjustment: bool = typer.Option(False, "--adjustment", help="Find valid adjustment sets"),
-    out: Optional[Path] = typer.Option(None, "--out", "-o", help="Output file"),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Output file"),
 ):
     """
     Visualize causal DAG with backdoor paths and adjustment sets.
     """
-    console.print(f"[bold green]Visualizing causal graph[/bold green]")
+    console.print("[bold green]Visualizing causal graph[/bold green]")
     console.print(f"Treatment: {treatment}, Outcome: {outcome}")
 
-    if dag.suffix == '.dot':
+    if dag.suffix == ".dot":
         console.print(f"Loading DAG from {dag}")
     else:
         console.print(f"Loading edge list from {dag}")
@@ -152,16 +163,20 @@ def counterfactual(
     data: Path = typer.Option(..., "--data", "-d", help="Input data CSV"),
     treatment: str = typer.Option(..., "--treatment", "-t", help="Treatment column"),
     outcome: str = typer.Option(..., "--outcome", "-y", help="Outcome column"),
-    covariates: List[str] = typer.Option([], "--covariates", "-x", help="Covariate columns"),
+    covariates: list[str] = typer.Option([], "--covariates", "-x", help="Covariate columns"),
     unit_id: int = typer.Option(0, "--unit", "-u", help="Unit index for individual counterfactual"),
-    treatment_value: float = typer.Option(1.0, "--treatment-value", help="Treatment value for counterfactual"),
-    method: str = typer.Option("g_computation", "--method", "-m", help="Method: g_computation, tmle"),
-    out: Optional[Path] = typer.Option(None, "--out", "-o", help="Output plot file"),
+    treatment_value: float = typer.Option(
+        1.0, "--treatment-value", help="Treatment value for counterfactual"
+    ),
+    method: str = typer.Option(
+        "g_computation", "--method", "-m", help="Method: g_computation, tmle"
+    ),
+    out: Path | None = typer.Option(None, "--out", "-o", help="Output plot file"),
 ):
     """
     Compute and visualize individual counterfactuals.
     """
-    console.print(f"[bold green]Computing counterfactuals[/bold green]")
+    console.print("[bold green]Computing counterfactuals[/bold green]")
     console.print(f"Unit: {unit_id}, Treatment: {treatment_value}")
 
     df = pd.read_csv(data)
@@ -172,7 +187,9 @@ def counterfactual(
 
 @app.command()
 def demo(
-    dataset: str = typer.Option("ihdp", "--dataset", help="Dataset: ihdp, lalonde, criteo, ab_test"),
+    dataset: str = typer.Option(
+        "ihdp", "--dataset", help="Dataset: ihdp, lalonde, criteo, ab_test"
+    ),
     run_all: bool = typer.Option(False, "--all", help="Run all demos"),
     out: Path = typer.Option(Path("demo_output"), "--out", "-o", help="Output directory"),
 ):
@@ -197,29 +214,23 @@ def config_template(
             "identification": {
                 "strategy": "backdoor",
                 "adjustment_set": ["age", "income", "education"],
-                "graph": "dag.dot"
+                "graph": "dag.dot",
             },
             "estimation": {
                 "method": "causal_forest",
-                "params": {
-                    "n_estimators": 500,
-                    "min_samples_leaf": 10
-                }
+                "params": {"n_estimators": 500, "min_samples_leaf": 10},
             },
             "refutation": [
                 "placebo_treatment",
                 "random_common_cause",
                 "data_subset",
-                "simulated_confounder"
+                "simulated_confounder",
             ],
-            "sensitivity": {
-                "method": "cinelli_hazlett",
-                "benchmark_covariates": ["age", "income"]
-            }
+            "sensitivity": {"method": "cinelli_hazlett", "benchmark_covariates": ["age", "income"]},
         }
     }
 
-    with open(out, 'w') as f:
+    with open(out, "w") as f:
         yaml.dump(template, f, default_flow_style=False)
 
     console.print(f"[bold green]Config template saved to {out}[/bold green]")

@@ -6,25 +6,22 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from causal_toolkit.core.base import (
-    CausalModel,
-    CausalEstimand,
-    CausalEstimate,
-    Assumptions,
-    IdentificationStrategy,
-    EstimatorType,
-    RefutationMethod,
-    RefutationResult,
-)
 from causal_toolkit.analysis.ab_test import (
     ABTestAnalyzer,
     ABTestData,
     ABTestResult,
     TestType,
-    Alternative,
     evaluate_uplift,
 )
 from causal_toolkit.analysis.sensitivity import SensitivityAnalyzer, SensitivityResult
+from causal_toolkit.core.base import (
+    Assumptions,
+    CausalEstimand,
+    CausalEstimate,
+    CausalModel,
+    RefutationMethod,
+    RefutationResult,
+)
 from causal_toolkit.utils.data import compute_smd, create_synthetic_data, propensity_score
 
 
@@ -74,17 +71,8 @@ class TestCoreTypes:
         assert "p=0.6200" in str(result)
 
     def test_causal_model_initialization(self):
-        df = pd.DataFrame({
-            "treatment": [0, 1, 0, 1],
-            "outcome": [1, 3, 2, 4],
-            "X1": [1, 2, 3, 4],
-        })
-        model = CausalModel(
-            data=df,
-            treatment="treatment",
-            outcome="outcome",
-            common_causes=["X1"],
-        )
+        df = pd.DataFrame({"treatment": [0, 1, 0, 1], "outcome": [1, 3, 2, 4], "X1": [1, 2, 3, 4]})
+        model = CausalModel(data=df, treatment="treatment", outcome="outcome", common_causes=["X1"])
         assert model.treatment == "treatment"
         assert model.outcome == "outcome"
         assert model.common_causes == ["X1"]
@@ -136,10 +124,7 @@ class TestABTest:
         assert result.ci_lower < result.ci_upper
 
     def test_ttest(self):
-        data = ABTestData(
-            n_a=100, sum_a=500, sum_sq_a=3000,
-            n_b=100, sum_b=550, sum_sq_b=3500,
-        )
+        data = ABTestData(n_a=100, sum_a=500, sum_sq_a=3000, n_b=100, sum_b=550, sum_sq_b=3500)
         result = self.analyzer.ttest(data)
         assert isinstance(result, ABTestResult)
         assert result.test_type == TestType.MEAN
@@ -155,9 +140,7 @@ class TestABTest:
         assert 0 <= result.rope_probability <= 1
 
     def test_power_analysis(self):
-        result = self.analyzer.power_analysis(
-            baseline_rate=0.1, mde=0.05, alpha=0.05, power=0.8
-        )
+        result = self.analyzer.power_analysis(baseline_rate=0.1, mde=0.05, alpha=0.05, power=0.8)
         assert "sample_size_per_variant" in result
         assert result["sample_size_per_variant"] > 0
         assert result["total_sample_size"] > result["sample_size_per_variant"]
@@ -198,9 +181,9 @@ class TestSensitivity:
 
     def test_rosenbaum_bounds(self):
         from causal_toolkit.core.base import CausalEstimate
+
         estimate = CausalEstimate(
-            value=0.5, ci_lower=0.1, ci_upper=0.9,
-            standard_error=0.2, n_samples=100
+            value=0.5, ci_lower=0.1, ci_upper=0.9, standard_error=0.2, n_samples=100
         )
         result = self.analyzer.rosenbaum_bounds(estimate, gamma_range=(1.0, 3.0))
         assert isinstance(result, SensitivityResult)
@@ -209,9 +192,9 @@ class TestSensitivity:
 
     def test_cinelli_hazlett(self):
         from causal_toolkit.core.base import CausalEstimate
+
         estimate = CausalEstimate(
-            value=0.5, ci_lower=0.1, ci_upper=0.9,
-            standard_error=0.2, n_samples=100
+            value=0.5, ci_lower=0.1, ci_upper=0.9, standard_error=0.2, n_samples=100
         )
         result = self.analyzer.cinelli_hazlett(estimate)
         assert isinstance(result, SensitivityResult)
@@ -220,10 +203,8 @@ class TestSensitivity:
 
     def test_e_value(self):
         from causal_toolkit.core.base import CausalEstimate
-        estimate = CausalEstimate(
-            value=0.5, ci_lower=0.1, ci_upper=0.9,
-            n_samples=100
-        )
+
+        estimate = CausalEstimate(value=0.5, ci_lower=0.1, ci_upper=0.9, n_samples=100)
         result = self.analyzer.e_value(estimate)
         assert isinstance(result, SensitivityResult)
         assert result.method == "evalue"
@@ -236,6 +217,7 @@ class TestDataLoading:
 
     def test_load_ihdp(self):
         from causal_toolkit.utils.data import load_dataset
+
         df = load_dataset("ihdp")
         assert len(df) > 0
         assert "treatment" in df.columns
@@ -243,6 +225,7 @@ class TestDataLoading:
 
     def test_load_lalonde(self):
         from causal_toolkit.utils.data import load_dataset
+
         df = load_dataset("lalonde")
         assert len(df) > 0
         assert "treatment" in df.columns
@@ -250,6 +233,7 @@ class TestDataLoading:
 
     def test_load_criteo_uplift(self):
         from causal_toolkit.utils.data import load_dataset
+
         df = load_dataset("criteo_uplift")
         assert len(df) > 0
         assert "treatment" in df.columns

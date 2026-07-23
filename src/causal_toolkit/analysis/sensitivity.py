@@ -10,12 +10,11 @@ Implements multiple sensitivity analysis methods for causal inference:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
-import numpy as np
-import pandas as pd
-import warnings
+from typing import Any
 
-from causal_toolkit.core.base import Assumptions, CausalEstimate, EstimatorType
+import numpy as np
+
+from causal_toolkit.core.base import CausalEstimate
 
 
 @dataclass
@@ -23,17 +22,17 @@ class SensitivityResult:
     """Result of sensitivity analysis."""
 
     method: str
-    gamma: Optional[float] = None  # Rosenbaum sensitivity parameter
-    robustness_value: Optional[float] = None  # RV: min confounding strength to change conclusion
-    r2_yz_dx: Optional[float] = None  # R²_{Y←Z|X,D} - outcome confounding
-    r2_zd_x: Optional[float] = None  # R²_{Z←D|X} - treatment confounding
-    e_value: Optional[float] = None  # E-value for point estimate
-    e_value_ci: Optional[float] = None  # E-value for CI limit
-    benchmark_covariate: Optional[str] = None
-    benchmark_r2_yz: Optional[float] = None
-    benchmark_r2_zd: Optional[float] = None
+    gamma: float | None = None  # Rosenbaum sensitivity parameter
+    robustness_value: float | None = None  # RV: min confounding strength to change conclusion
+    r2_yz_dx: float | None = None  # R²_{Y←Z|X,D} - outcome confounding
+    r2_zd_x: float | None = None  # R²_{Z←D|X} - treatment confounding
+    e_value: float | None = None  # E-value for point estimate
+    e_value_ci: float | None = None  # E-value for CI limit
+    benchmark_covariate: str | None = None
+    benchmark_r2_yz: float | None = None
+    benchmark_r2_zd: float | None = None
     conclusion_reversed: bool = False
-    details: Dict[str, Any] = None
+    details: dict[str, Any] = None
 
     def __post_init__(self):
         if self.details is None:
@@ -41,10 +40,15 @@ class SensitivityResult:
 
     def __str__(self) -> str:
         if self.method == "rosenbaum":
-            return f"Rosenbaum bounds: Γ={self.gamma:.3f}, conclusion_reversed={self.conclusion_reversed}"
+            return (
+                f"Rosenbaum bounds: Γ={self.gamma:.3f}, "
+                f"conclusion_reversed={self.conclusion_reversed}"
+            )
         elif self.method == "cinelli_hazlett":
-            return (f"Cinelli-Hazlett: RV={self.robustness_value:.4f}, "
-                    f"R²_yz={self.r2_yz_dx:.4f}, R²_zd={self.r2_zd_x:.4f}")
+            return (
+                f"Cinelli-Hazlett: RV={self.robustness_value:.4f}, "
+                f"R²_yz={self.r2_yz_dx:.4f}, R²_zd={self.r2_zd_x:.4f}"
+            )
         elif self.method == "evalue":
             return f"E-value: {self.e_value:.3f} (CI: {self.e_value_ci:.3f})"
         return f"{self.method}: conclusion_reversed={self.conclusion_reversed}"
@@ -63,12 +67,12 @@ class SensitivityAnalyzer:
 
     def __init__(self, causal_model: Any = None):
         self.model = causal_model
-        self.results: List[SensitivityResult] = []
+        self.results: list[SensitivityResult] = []
 
     def rosenbaum_bounds(
         self,
         estimate: CausalEstimate,
-        gamma_range: Tuple[float, float] = (1.0, 3.0),
+        gamma_range: tuple[float, float] = (1.0, 3.0),
         n_points: int = 50,
         alpha: float = 0.05,
     ) -> SensitivityResult:
@@ -116,7 +120,7 @@ class SensitivityAnalyzer:
             if gamma == 1:
                 p_upper = 2 * (1 - stats.norm.cdf(z_obs))
             else:
-                p_upper = 2 * (1 - stats.norm.cdf(z_adj * stats.norm.ppf(1 - 1/(2*gamma))))
+                p_upper = 2 * (1 - stats.norm.cdf(z_adj * stats.norm.ppf(1 - 1 / (2 * gamma))))
 
             p_values.append(p_upper)
 
@@ -142,9 +146,9 @@ class SensitivityAnalyzer:
     def cinelli_hazlett(
         self,
         estimate: CausalEstimate,
-        benchmark_covariate: str = None,
-        r2_yz_dx: float = None,
-        r2_zd_x: float = None,
+        benchmark_covariate: str | None = None,
+        r2_yz_dx: float | None = None,
+        r2_zd_x: float | None = None,
         k_yz: int = 1,
         k_zd: int = 1,
         alpha: float = 0.05,
@@ -167,16 +171,12 @@ class SensitivityAnalyzer:
         Returns:
             SensitivityResult with RV and benchmark comparison
         """
-        from scipy import stats
 
         t_stat = estimate.value / estimate.standard_error if estimate.standard_error else 1.96
-        df = estimate.n_samples - len(getattr(self.model, 'common_causes', [])) - 2
+        df = estimate.n_samples - len(getattr(self.model, "common_causes", [])) - 2
 
         if df <= 0:
             df = max(estimate.n_samples - 2, 1)
-
-        # Critical t-value
-        t_crit = stats.t.ppf(1 - alpha/2, df)
 
         # Robustness Value for significance
         # RV = f(t, df) = sqrt(t²/(t²+df)) * (some adjustment)
@@ -184,18 +184,20 @@ class SensitivityAnalyzer:
         rv_sig = abs(t_stat) / np.sqrt(df + t_stat**2)
 
         # RV for estimate to reduce to zero
-        rv_est = abs(estimate.value) / np.sqrt(df * estimate.standard_error**2 + estimate.value**2 / df)
+        rv_est = abs(estimate.value) / np.sqrt(
+            df * estimate.standard_error**2 + estimate.value**2 / df
+        )
 
         robustness_value = min(rv_sig, rv_est)  # Conservative
+
+        import contextlib
 
         # Benchmark against observed covariate
         benchmark_r2_yz = None
         benchmark_r2_zd = None
         if benchmark_covariate and self.model is not None:
-            try:
+            with contextlib.suppress(Exception):
                 benchmark_r2_yz, benchmark_r2_zd = self._compute_benchmark_r2(benchmark_covariate)
-            except Exception:
-                pass
 
         # Check if benchmark explains away effect
         if benchmark_r2_yz is not None and benchmark_r2_zd is not None:
@@ -225,16 +227,15 @@ class SensitivityAnalyzer:
         self.results.append(result)
         return result
 
-    def _compute_benchmark_r2(self, covariate: str) -> Tuple[float, float]:
+    def _compute_benchmark_r2(self, covariate: str) -> tuple[float, float]:
         """Compute partial R² for a benchmark covariate."""
-        if self.model is None or not hasattr(self.model, 'data'):
+        if self.model is None or not hasattr(self.model, "data"):
             return (0.0, 0.0)
 
         from sklearn.linear_model import LinearRegression
-        from sklearn.preprocessing import StandardScaler
 
         data = self.model.data
-        X_cols = self.model.common_causes + [self.model.treatment]
+        X_cols = [*self.model.common_causes, self.model.treatment]
         X = data[X_cols].values
         y = data[self.model.outcome].values
         z = data[covariate].values
@@ -258,10 +259,7 @@ class SensitivityAnalyzer:
         return (max(0, r2_yz_dx), max(0, r2_zd_x))
 
     def e_value(
-        self,
-        estimate: CausalEstimate,
-        true_effect: float = 0.0,
-        alpha: float = 0.05,
+        self, estimate: CausalEstimate, true_effect: float = 0.0, alpha: float = 0.05
     ) -> SensitivityResult:
         """
         Compute E-value (VanderWeele & Ding, 2017).
@@ -280,7 +278,6 @@ class SensitivityAnalyzer:
         # E-value for point estimate
         # For risk ratio: E = RR + sqrt(RR*(RR-1))
         # For coefficient: approximate with exp(|coef|)
-        from scipy import stats
 
         # Convert to relative risk scale if needed
         # Assume estimate.value is log-RR or coefficient
@@ -306,7 +303,7 @@ class SensitivityAnalyzer:
             conclusion_reversed=conclusion_reversed,
             details={
                 "rr_estimate": rr_estimate,
-                "rr_ci": rr_ci if 'rr_ci' in locals() else rr_estimate,
+                "rr_ci": rr_ci if "rr_ci" in locals() else rr_estimate,
                 "true_effect": true_effect,
                 "alpha": alpha,
             },
@@ -317,10 +314,10 @@ class SensitivityAnalyzer:
     def tip_curve(
         self,
         estimate: CausalEstimate,
-        r2_yz_range: Tuple[float, float] = (0, 0.5),
-        r2_zd_range: Tuple[float, float] = (0, 0.5),
+        r2_yz_range: tuple[float, float] = (0, 0.5),
+        r2_zd_range: tuple[float, float] = (0, 0.5),
         n_points: int = 30,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate TIPS (Treatment Effect Sensitivity) curve data.
 
@@ -341,6 +338,7 @@ class SensitivityAnalyzer:
 
         # Significance threshold
         from scipy import stats
+
         t_crit = stats.t.ppf(0.975, max(estimate.n_samples - 5, 1))
         significant = np.abs(adjusted) > t_crit * se
 
@@ -361,15 +359,17 @@ class SensitivityAnalyzer:
         for r in self.results:
             lines.append(str(r))
             if r.benchmark_covariate:
-                lines.append(f"  Benchmark '{r.benchmark_covariate}': "
-                           f"R²_yz={r.benchmark_r2_yz:.4f}, R²_zd={r.benchmark_r2_zd:.4f}")
+                lines.append(
+                    f"  Benchmark '{r.benchmark_covariate}': "
+                    f"R²_yz={r.benchmark_r2_yz:.4f}, R²_zd={r.benchmark_r2_zd:.4f}"
+                )
         return "\n".join(lines)
 
 
 def run_sensitivity_suite(
     estimate: CausalEstimate,
-    model: Any = None,
-    benchmark_covariates: List[str] = None,
+    model: Any | None = None,
+    benchmark_covariates: list[str] | None = None,
 ) -> SensitivityAnalyzer:
     """
     Run full sensitivity analysis suite.

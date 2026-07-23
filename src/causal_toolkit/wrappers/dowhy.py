@@ -4,14 +4,11 @@ DoWhy wrapper for causal identification and estimation.
 Provides unified interface to DoWhy's causal engine with our type definitions.
 """
 
-from typing import Any, Dict, List, Optional, Union
-import numpy as np
-import pandas as pd
+from typing import Any
 
 from causal_toolkit.core.base import (
-    Assumptions,
-    CausalEstimate,
     CausalEstimand,
+    CausalEstimate,
     CausalModel,
     EstimatorType,
     IdentificationStrategy,
@@ -36,8 +33,8 @@ class DoWhyWrapper:
         """Build DoWhy CausalModel from our specification."""
         try:
             from dowhy import CausalModel as DowhyCausalModel
-        except ImportError:
-            raise ImportError("DoWhy not installed. Install with: pip install dowhy")
+        except ImportError as err:
+            raise ImportError("DoWhy not installed. Install with: pip install dowhy") from err
 
         # Build graph string if not provided
         graph_str = self._build_graph_string()
@@ -57,7 +54,7 @@ class DoWhyWrapper:
         if self.model.graph is not None:
             return str(self.model.graph)
 
-        nodes = set([self.model.treatment, self.model.outcome])
+        nodes = {self.model.treatment, self.model.outcome}
         nodes.update(self.model.common_causes)
         nodes.update(self.model.instruments)
         nodes.update(self.model.effect_modifiers)
@@ -73,12 +70,11 @@ class DoWhyWrapper:
             edges.append(f"{em} -> {self.model.outcome}")
         edges.append(f"{self.model.treatment} -> {self.model.outcome}")
 
-        return f"digraph {{\n  {';\n  '.join(edges)};\n}}"
+        graph_body = ";\n  ".join(edges)
+        return f"digraph {{\n  {graph_body};\n}}"
 
     def identify(
-        self,
-        strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR,
-        **kwargs,
+        self, strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR, **kwargs
     ) -> CausalEstimand:
         """Identify causal estimand using DoWhy."""
         if self._dowhy_model is None:
@@ -86,13 +82,13 @@ class DoWhyWrapper:
 
         # Map strategy to DoWhy method
         dowhy_method = self._map_strategy(strategy)
-        identified_estimand = self._dowhy_model.identify_effect(
-            method_name=dowhy_method, **kwargs
-        )
+        identified_estimand = self._dowhy_model.identify_effect(method_name=dowhy_method, **kwargs)
 
         # Convert to our type
         estimand = CausalEstimand(
-            expression=str(identified_estimand.estimand) if hasattr(identified_estimand, 'estimand') else str(identified_estimand.estimands),
+            expression=str(identified_estimand.estimand)
+            if hasattr(identified_estimand, "estimand")
+            else str(identified_estimand.estimands),
             estimand_type=str(identified_estimand.estimand_type),
             treatment=self.model.treatment,
             outcome=self.model.outcome,
@@ -115,11 +111,7 @@ class DoWhyWrapper:
         }
         return mapping.get(strategy, "default")
 
-    def estimate(
-        self,
-        estimator: EstimatorType,
-        **estimator_kwargs,
-    ) -> CausalEstimate:
+    def estimate(self, estimator: EstimatorType, **estimator_kwargs) -> CausalEstimate:
         """Estimate causal effect using DoWhy's estimators."""
         if self.model._estimand is None:
             self.identify()
@@ -139,6 +131,7 @@ class DoWhyWrapper:
             se = getattr(estimate, "std_err", None)
             if se:
                 from scipy import stats
+
                 z = stats.norm.ppf(0.975)
                 ci_lower = value - z * se
                 ci_upper = value + z * se
@@ -154,10 +147,7 @@ class DoWhyWrapper:
             standard_error=getattr(estimate, "std_err", None),
             p_value=getattr(estimate, "p_value", None),
             n_samples=len(self.model.data),
-            diagnostics={
-                "dowhy_estimate": estimate,
-                "method_params": estimator_kwargs,
-            },
+            diagnostics={"dowhy_estimate": estimate, "method_params": estimator_kwargs},
             estimand=self.model._estimand,
         )
         self.model._estimate = causal_estimate
@@ -175,10 +165,8 @@ class DoWhyWrapper:
         return mapping.get(estimator, "backdoor.linear_regression")
 
     def refute(
-        self,
-        methods: List[RefutationMethod] = None,
-        **kwargs,
-    ) -> List[RefutationResult]:
+        self, methods: list[RefutationMethod] | None = None, **kwargs
+    ) -> list[RefutationResult]:
         """Run refutation tests."""
         if self.model._estimate is None:
             self.estimate(EstimatorType.LINEAR_REGRESSION)
@@ -232,13 +220,10 @@ class DoWhyWrapper:
         }
         return mapping.get(method, "random_common_cause")
 
-    def sensitivity_analysis(
-        self,
-        method: str = "cinelli_hazlett",
-        **kwargs,
-    ) -> Any:
+    def sensitivity_analysis(self, method: str = "cinelli_hazlett", **kwargs) -> Any:
         """Run sensitivity analysis."""
         from causal_toolkit.analysis.sensitivity import SensitivityAnalyzer
+
         return SensitivityAnalyzer(self.model).analyze(method=method, **kwargs)
 
 

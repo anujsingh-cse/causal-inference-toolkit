@@ -2,16 +2,12 @@
 Utility functions for Causal Inference Toolkit.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 def standardize(
-    df: pd.DataFrame,
-    columns: Optional[List[str]] = None,
-    method: str = "zscore",
+    df: pd.DataFrame, columns: list[str] | None = None, method: str = "zscore"
 ) -> pd.DataFrame:
     """
     Standardize numeric columns.
@@ -42,11 +38,7 @@ def standardize(
     return result
 
 
-def compute_smd(
-    treated: pd.Series,
-    control: pd.Series,
-    pooled: bool = True,
-) -> float:
+def compute_smd(treated: pd.Series, control: pd.Series, pooled: bool = True) -> float:
     """
     Compute Standardized Mean Difference (Cohen's d) between two groups.
 
@@ -70,11 +62,8 @@ def compute_smd(
 
 
 def compute_all_smds(
-    df: pd.DataFrame,
-    treatment_col: str,
-    covariates: List[str],
-    threshold: float = 0.1,
-) -> Dict[str, Dict[str, float]]:
+    df: pd.DataFrame, treatment_col: str, covariates: list[str], threshold: float = 0.1
+) -> dict[str, dict[str, float]]:
     """
     Compute SMDs for all covariates between treatment groups.
 
@@ -95,11 +84,7 @@ def compute_all_smds(
 
 
 def propensity_score(
-    df: pd.DataFrame,
-    treatment_col: str,
-    covariates: List[str],
-    model: str = "logistic",
-    **kwargs,
+    df: pd.DataFrame, treatment_col: str, covariates: list[str], model: str = "logistic", **kwargs
 ) -> np.ndarray:
     """
     Estimate propensity scores.
@@ -110,8 +95,8 @@ def propensity_score(
         covariates: Covariate columns
         model: 'logistic', 'gbm', 'rf', 'xgboost'
     """
-    from sklearn.linear_model import LogisticRegression
     from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+    from sklearn.linear_model import LogisticRegression
 
     X = df[covariates].values
     T = df[treatment_col].values
@@ -130,9 +115,7 @@ def propensity_score(
 
 
 def inverse_probability_weighting(
-    treatment: np.ndarray,
-    propensity: np.ndarray,
-    stabilized: bool = True,
+    treatment: np.ndarray, propensity: np.ndarray, stabilized: bool = True
 ) -> np.ndarray:
     """
     Compute inverse probability weights.
@@ -147,25 +130,15 @@ def inverse_probability_weighting(
 
     if stabilized:
         p_treat = treatment.mean()
-        weights = np.where(
-            treatment == 1,
-            p_treat / propensity,
-            (1 - p_treat) / (1 - propensity)
-        )
+        weights = np.where(treatment == 1, p_treat / propensity, (1 - p_treat) / (1 - propensity))
     else:
-        weights = np.where(
-            treatment == 1,
-            1 / propensity,
-            1 / (1 - propensity)
-        )
+        weights = np.where(treatment == 1, 1 / propensity, 1 / (1 - propensity))
 
     return weights
 
 
 def trim_weights(
-    weights: np.ndarray,
-    lower_quantile: float = 0.01,
-    upper_quantile: float = 0.99,
+    weights: np.ndarray, lower_quantile: float = 0.01, upper_quantile: float = 0.99
 ) -> np.ndarray:
     """Trim extreme weights at quantiles."""
     lower = np.quantile(weights, lower_quantile)
@@ -175,7 +148,7 @@ def trim_weights(
 
 def effective_sample_size(weights: np.ndarray) -> float:
     """Compute effective sample size from weights."""
-    return (np.sum(weights) ** 2) / np.sum(weights ** 2)
+    return (np.sum(weights) ** 2) / np.sum(weights**2)
 
 
 def bootstrap_ci(
@@ -184,7 +157,7 @@ def bootstrap_ci(
     n_bootstrap: int = 1000,
     confidence: float = 0.95,
     random_state: int = 42,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Compute bootstrap confidence interval.
 
@@ -219,7 +192,7 @@ def bootstrap_ci_pairs(
     n_bootstrap: int = 1000,
     confidence: float = 0.95,
     random_state: int = 42,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Bootstrap CI for pairwise statistic."""
     rng = np.random.default_rng(random_state)
     n_a, n_b = len(data_a), len(data_b)
@@ -262,37 +235,39 @@ def _load_ihdp() -> pd.DataFrame:
     n = 747
 
     # Covariates (simplified version of IHDP covariates)
-    data = pd.DataFrame({
-        'treatment': np.random.binomial(1, 0.5, n),
-        'bw': np.random.normal(3000, 500, n),  # birth weight
-        'b.head': np.random.normal(34, 1.5, n),  # head circumference
-        'preterm': np.random.binomial(1, 0.1, n),
-        'birth.o': np.random.randint(1, 5, n),
-        'nnhealth': np.random.binomial(1, 0.2, n),
-        'momage': np.random.normal(27, 6, n),
-        'sex': np.random.binomial(1, 0.5, n),
-        'twin': np.random.binomial(1, 0.02, n),
-        'b.marr': np.random.binomial(1, 0.7, n),
-        'mom.lths': np.random.binomial(1, 0.2, n),
-        'mom.hs': np.random.binomial(1, 0.3, n),
-        'mom.sc': np.random.binomial(1, 0.2, n),
-        'cig': np.random.binomial(1, 0.2, n),
-        'first': np.random.binomial(1, 0.4, n),
-        'booze': np.random.binomial(1, 0.1, n),
-        'drugs': np.random.binomial(1, 0.02, n),
-        'work.dur': np.random.normal(20, 10, n),
-        'prenatal': np.random.binomial(1, 0.9, n),
-        'site': np.random.randint(1, 9, n),
-    })
+    data = pd.DataFrame(
+        {
+            "treatment": np.random.binomial(1, 0.5, n),
+            "bw": np.random.normal(3000, 500, n),  # birth weight
+            "b.head": np.random.normal(34, 1.5, n),  # head circumference
+            "preterm": np.random.binomial(1, 0.1, n),
+            "birth.o": np.random.randint(1, 5, n),
+            "nnhealth": np.random.binomial(1, 0.2, n),
+            "momage": np.random.normal(27, 6, n),
+            "sex": np.random.binomial(1, 0.5, n),
+            "twin": np.random.binomial(1, 0.02, n),
+            "b.marr": np.random.binomial(1, 0.7, n),
+            "mom.lths": np.random.binomial(1, 0.2, n),
+            "mom.hs": np.random.binomial(1, 0.3, n),
+            "mom.sc": np.random.binomial(1, 0.2, n),
+            "cig": np.random.binomial(1, 0.2, n),
+            "first": np.random.binomial(1, 0.4, n),
+            "booze": np.random.binomial(1, 0.1, n),
+            "drugs": np.random.binomial(1, 0.02, n),
+            "work.dur": np.random.normal(20, 10, n),
+            "prenatal": np.random.binomial(1, 0.9, n),
+            "site": np.random.randint(1, 9, n),
+        }
+    )
 
     # True ATE = 4 (simulate)
     # Y = 100 + 4*T + 0.01*bw + ... + noise
-    data['outcome'] = (
+    data["outcome"] = (
         100
-        + 4 * data['treatment']  # True ATE
-        + 0.01 * data['bw']
-        + 0.5 * data['momage']
-        - 2 * data['mom.lths']
+        + 4 * data["treatment"]  # True ATE
+        + 0.01 * data["bw"]
+        + 0.5 * data["momage"]
+        - 2 * data["mom.lths"]
         + np.random.normal(0, 10, n)
     )
 
@@ -316,17 +291,19 @@ def _load_lalonde() -> pd.DataFrame:
         re74 = np.random.exponential(5000, n)
         re75 = np.random.exponential(3000, n)
 
-        return pd.DataFrame({
-            'treatment': np.random.binomial(1, treat_prob, n),
-            'age': age,
-            'education': educ,
-            'black': black,
-            'hispanic': hisp,
-            'married': married,
-            'nodegree': nodegree,
-            're74': re75,  # 1974 earnings
-            're75': re75,  # 1975 earnings
-        })
+        return pd.DataFrame(
+            {
+                "treatment": np.random.binomial(1, treat_prob, n),
+                "age": age,
+                "education": educ,
+                "black": black,
+                "hispanic": hisp,
+                "married": married,
+                "nodegree": nodegree,
+                "re74": re74,  # 1974 earnings
+                "re75": re75,  # 1975 earnings
+            }
+        )
 
     treated = gen_group(n_treated, 1.0)
     control = gen_group(n_control, 0.0)
@@ -335,20 +312,22 @@ def _load_lalonde() -> pd.DataFrame:
     def gen_outcome(df):
         return (
             1000
-            + 100 * df['age']
-            + 200 * df['education']
-            - 1500 * df['black']
-            - 1000 * df['hispanic']
-            + 500 * df['married']
-            + 300 * (1 - df['nodegree'])
-            + 0.1 * df['re74']
-            + 0.15 * df['re75']
-            + (1500 if 'treatment' in df and df['treatment'].iloc[0] == 1 else 0)  # Treatment effect
+            + 100 * df["age"]
+            + 200 * df["education"]
+            - 1500 * df["black"]
+            - 1000 * df["hispanic"]
+            + 500 * df["married"]
+            + 300 * (1 - df["nodegree"])
+            + 0.1 * df["re74"]
+            + 0.15 * df["re75"]
+            + (
+                1500 if "treatment" in df and df["treatment"].iloc[0] == 1 else 0
+            )  # Treatment effect
             + np.random.normal(0, 3000, len(df))
         )
 
-    treated['outcome'] = gen_outcome(treated)
-    control['outcome'] = gen_outcome(control)
+    treated["outcome"] = gen_outcome(treated)
+    control["outcome"] = gen_outcome(control)
 
     return pd.concat([treated, control], ignore_index=True)
 
@@ -359,36 +338,38 @@ def _load_criteo_uplift() -> pd.DataFrame:
     n = 10000
 
     # Simplified Criteo-like features
-    data = pd.DataFrame({
-        'treatment': np.random.binomial(1, 0.5, n),
-        'feature_0': np.random.normal(0, 1, n),
-        'feature_1': np.random.normal(0, 1, n),
-        'feature_2': np.random.normal(0, 1, n),
-        'feature_3': np.random.normal(0, 1, n),
-        'feature_4': np.random.normal(0, 1, n),
-        'feature_5': np.random.normal(0, 1, n),
-        'feature_6': np.random.normal(0, 1, n),
-        'feature_7': np.random.normal(0, 1, n),
-        'feature_8': np.random.normal(0, 1, n),
-        'feature_9': np.random.normal(0, 1, n),
-        'feature_10': np.random.normal(0, 1, n),
-        'feature_11': np.random.normal(0, 1, n),
-    })
+    data = pd.DataFrame(
+        {
+            "treatment": np.random.binomial(1, 0.5, n),
+            "feature_0": np.random.normal(0, 1, n),
+            "feature_1": np.random.normal(0, 1, n),
+            "feature_2": np.random.normal(0, 1, n),
+            "feature_3": np.random.normal(0, 1, n),
+            "feature_4": np.random.normal(0, 1, n),
+            "feature_5": np.random.normal(0, 1, n),
+            "feature_6": np.random.normal(0, 1, n),
+            "feature_7": np.random.normal(0, 1, n),
+            "feature_8": np.random.normal(0, 1, n),
+            "feature_9": np.random.normal(0, 1, n),
+            "feature_10": np.random.normal(0, 1, n),
+            "feature_11": np.random.normal(0, 1, n),
+        }
+    )
 
     # Heterogeneous treatment effect
     cate = (
-        0.5 * data['feature_0']
-        + 0.3 * data['feature_1']**2
-        - 0.2 * data['feature_2']
+        0.5 * data["feature_0"]
+        + 0.3 * data["feature_1"] ** 2
+        - 0.2 * data["feature_2"]
         + np.random.normal(0, 0.1, n)
     )
 
-    data['outcome'] = (
+    data["outcome"] = (
         0.1
-        + 0.5 * data['feature_0']
-        + 0.3 * data['feature_1']
-        + 0.2 * data['feature_2']
-        + data['treatment'] * cate
+        + 0.5 * data["feature_0"]
+        + 0.3 * data["feature_1"]
+        + 0.2 * data["feature_2"]
+        + data["treatment"] * cate
         + np.random.normal(0, 0.5, n)
     )
 
@@ -418,7 +399,7 @@ def create_synthetic_data(
 
     # Generate covariates
     X = np.random.randn(n, n_covariates)
-    X_df = pd.DataFrame(X, columns=[f'x{i}' for i in range(n_covariates)])
+    X_df = pd.DataFrame(X, columns=[f"x{i}" for i in range(n_covariates)])
 
     # Treatment assignment
     if confounding:
@@ -433,20 +414,17 @@ def create_synthetic_data(
     # Outcome with treatment effect
     if heterogeneity:
         # CATE varies with covariates
-        cate = ate + 0.5 * X[:, 0] - 0.3 * X[:, 1] + 0.2 * X[:, 2]**2
+        cate = ate + 0.5 * X[:, 0] - 0.3 * X[:, 1] + 0.2 * X[:, 2] ** 2
     else:
         cate = ate * np.ones(n)
 
     outcome = (
-        10
-        + X[:, 0] + 0.5 * X[:, 1] - 0.3 * X[:, 2]
-        + treatment * cate
-        + np.random.randn(n) * 2
+        10 + X[:, 0] + 0.5 * X[:, 1] - 0.3 * X[:, 2] + treatment * cate + np.random.randn(n) * 2
     )
 
     data = X_df.copy()
-    data['treatment'] = treatment
-    data['outcome'] = outcome
-    data['true_cate'] = cate
+    data["treatment"] = treatment
+    data["outcome"] = outcome
+    data["true_cate"] = cate
 
     return data
