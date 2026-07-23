@@ -1,2 +1,0 @@
-[console_scripts]
-causal-toolkit = causal_toolkit.cli:app
