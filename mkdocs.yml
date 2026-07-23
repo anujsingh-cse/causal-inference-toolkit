@@ -1,0 +1,117 @@
+site_name: "Causal Inference Toolkit"
+site_url: "https://yourusername.github.io/causal-toolkit"
+repo_url: "https://github.com/yourusername/causal-toolkit"
+repo_name: "causal-toolkit"
+copyright: "Copyright &copy; 2025 Anuj Singh"
+
+theme:
+  name: "material"
+  palette:
+    - scheme: "default"
+      primary: "teal"
+      accent: "cyan"
+      toggle:
+        icon: "material/brightness-7"
+        name: "Switch to dark mode"
+    - scheme: "slate"
+      primary: "teal"
+      accent: "cyan"
+      toggle:
+        icon: "material/brightness-4"
+        name: "Switch to light mode"
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.annotate
+    - content.code.copy
+    - toc.integrate
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.twemoji
+  - toc:
+      permalink: true
+      title: "On this page"
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - Core Concepts:
+      - Causal Model: concepts/causal-model.md
+      - Identification: concepts/identification.md
+      - Estimation: concepts/estimation.md
+      - Refutation: concepts/refutation.md
+      - Sensitivity: concepts/sensitivity.md
+  - User Guide:
+      - DoWhy Wrapper: user-guide/dowhy.md
+      - EconML Wrapper: user-guide/econml.md
+      - A/B Testing: user-guide/ab-testing.md
+      - Uplift Modeling: user-guide/uplift.md
+      - Visualization: user-guide/visualization.md
+  - CLI Reference:
+      - Estimate: cli/estimate.md
+      - Sensitivity: cli/sensitivity.md
+      - AB Test: cli/ab-test.md
+      - Uplift: cli/uplift.md
+      - Graph: cli/graph.md
+  - API Reference:
+      - Core: api/core.md
+      - Wrappers: api/wrappers.md
+      - Analysis: api/analysis.md
+      - Visualization: api/visualization.md
+  - Examples:
+      - IHDP Demo: examples/ihdp.md
+      - Lalonde Demo: examples/lalonde.md
+      - A/B & Uplift: examples/ab-uplift.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_source: true
+            show_root_heading: true
+            show_signature: true
+            show_signature_annotations: true
+            merge_init_into_class: true
+
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yourusername/causal-toolkit
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/yourusername
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/yourusername
+
+extra_css:
+  - stylesheets/extra.css
