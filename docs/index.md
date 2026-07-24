@@ -81,7 +81,7 @@ pip install "causal-toolkit[dev,viz,notebooks]"
 
 ## License
 
-MIT License — see [LICENSE](../LICENSE)
+MIT License — see [LICENSE](https://github.com/anujsingh-cse/causal-inference-toolkit/blob/master/LICENSE)
 
 ## Citation
 
