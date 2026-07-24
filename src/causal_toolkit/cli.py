@@ -528,5 +528,18 @@ def report(
     typer.echo(f"[green]Executive report generated at {out_path}[/green]")
 
 
+@app.command()
+def app_runner(port: int = typer.Option(8501, "--port", "-p", help="Port for Streamlit server")):
+    """Launch Streamlit web application dashboard."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    app_path = Path(__file__).parent / "demo" / "app.py"
+    typer.echo(f"[green]Launching Causal Inference Dashboard on port {port}...[/green]")
+    cmd = [sys.executable, "-m", "streamlit", "run", str(app_path), "--server.port", str(port)]
+    subprocess.run(cmd, check=False)
+
+
 if __name__ == "__main__":
     app()
