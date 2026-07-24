@@ -197,7 +197,7 @@ class DifferenceInDifferences:
         time_col: str,
         outcome_col: str,
         treatment_col: str,
-        treatment_start_time: int | float,
+        treatment_start_time: int | float | str,
     ) -> pd.DataFrame:
         """Compute mean outcome dynamic trajectory by period relative to treatment."""
         df_event = df.copy()
@@ -210,7 +210,9 @@ class DifferenceInDifferences:
         )
         return grouped
 
-    def _ols_regression(self, X: np.ndarray, y: np.ndarray):
+    def _ols_regression(
+        self, X: np.ndarray, y: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         n, k = X.shape
         dof = max(1, n - k)
         beta, _, _, _ = np.linalg.lstsq(X, y, rcond=None)

@@ -45,4 +45,3 @@ def test_causal_report_generator_save_file():
         assert p.exists()
         content = p.read_text(encoding="utf-8")
         assert "1.2000" in content
-

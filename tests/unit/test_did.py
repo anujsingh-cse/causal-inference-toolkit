@@ -26,10 +26,7 @@ def sample_did_data():
 def test_did_2x2_estimation(sample_did_data):
     did = DifferenceInDifferences()
     res = did.estimate_2x2(
-        data=sample_did_data,
-        outcome_col="outcome",
-        treatment_col="treatment",
-        post_col="post",
+        data=sample_did_data, outcome_col="outcome", treatment_col="treatment", post_col="post"
     )
 
     assert isinstance(res, DiDResult)
@@ -59,4 +56,3 @@ def test_did_fit_panel(sample_did_data):
     assert isinstance(res, DiDResult)
     assert res.att == pytest.approx(3.0, abs=0.5)
     assert res.parallel_trends_pvalue is not None
-

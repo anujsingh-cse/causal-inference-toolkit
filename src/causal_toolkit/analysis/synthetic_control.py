@@ -5,7 +5,6 @@ Optimizes non-negative donor weights summing to 1 to construct a synthetic contr
 that matches the pre-treatment trajectory and characteristics of the treated unit.
 """
 
-
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize

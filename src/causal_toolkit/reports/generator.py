@@ -39,7 +39,9 @@ class CausalReportGenerator:
         ci_high = estimate_summary.get("ci_upper", ate + 1.96 * se)
         method = estimate_summary.get("method", "Backdoor Estimation")
 
-        sig_style = "background:#28a745;color:white;padding:3px 8px;border-radius:4px;font-size:12px;"
+        sig_style = (
+            "background:#28a745;color:white;padding:3px 8px;border-radius:4px;font-size:12px;"
+        )
         not_sig_style = (
             "background:#dc3545;color:white;padding:3px 8px;border-radius:4px;font-size:12px;"
         )
@@ -188,4 +190,3 @@ class CausalReportGenerator:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(html_content, encoding="utf-8")
         return str(p)
-
