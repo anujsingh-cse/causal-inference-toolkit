@@ -608,9 +608,11 @@ def evaluate_uplift(
         gains.append(treated_outcome - control_outcome)
 
     # Qini coefficient = area under gain curve
+    from scipy.integrate import trapezoid
+
     x = np.arange(1, n_bins + 1) / n_bins
     y = np.cumsum(gains) / np.sum(np.abs(gains)) if np.sum(np.abs(gains)) > 0 else np.zeros(n_bins)
-    qini = np.trapz(y, x)
+    qini = trapezoid(y, x)
 
     # AUUC (Area Under Uplift Curve)
     # Random ordering baseline
@@ -629,7 +631,7 @@ def evaluate_uplift(
         if np.sum(np.abs(random_gains)) > 0
         else np.zeros(n_bins)
     )
-    auuc = np.trapz(y - random_y, x)
+    auuc = trapezoid(y - random_y, x)
 
     return {
         "qini": float(qini),

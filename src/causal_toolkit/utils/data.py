@@ -140,7 +140,7 @@ def inverse_probability_weighting(
     else:
         weights = np.where(treatment == 1, 1 / propensity, 1 / (1 - propensity))
 
-    return weights
+    return np.asarray(weights)
 
 
 def trim_weights(
@@ -149,7 +149,7 @@ def trim_weights(
     """Trim extreme weights at quantiles."""
     lower = np.quantile(weights, lower_quantile)
     upper = np.quantile(weights, upper_quantile)
-    return np.clip(weights, lower, upper)
+    return np.asarray(np.clip(weights, lower, upper))
 
 
 def effective_sample_size(weights: np.ndarray) -> float:
