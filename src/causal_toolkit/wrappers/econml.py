@@ -92,7 +92,7 @@ class EconMLWrapper:
             diagnostics=cate_estimate.diagnostics,
         )
 
-    def _get_estimator(self, estimator: EstimatorType, **kwargs) -> BaseEstimator:
+    def _get_estimator(self, estimator: EstimatorType, **kwargs: Any) -> BaseEstimator:
         """Instantiate EconML estimator."""
         if estimator == EstimatorType.T_LEARNER:
             return self._t_learner(**kwargs)
@@ -114,7 +114,7 @@ class EconMLWrapper:
         else:
             raise ValueError(f"Unknown EconML estimator: {estimator}")
 
-    def _t_learner(self, **kwargs) -> Any:
+    def _t_learner(self, **kwargs: Any) -> Any:
         from econml.metalearners import TLearner
         from sklearn.ensemble import GradientBoostingRegressor
 
@@ -127,14 +127,14 @@ class EconMLWrapper:
         )
         return TLearner(models=models)
 
-    def _s_learner(self, **kwargs) -> Any:
+    def _s_learner(self, **kwargs: Any) -> Any:
         from econml.metalearners import SLearner
         from sklearn.ensemble import GradientBoostingRegressor
 
         model = kwargs.get("model", GradientBoostingRegressor(n_estimators=200, max_depth=3))
         return SLearner(overall_model=model)
 
-    def _x_learner(self, **kwargs) -> Any:
+    def _x_learner(self, **kwargs: Any) -> Any:
         from econml.metalearners import XLearner
         from sklearn.ensemble import GradientBoostingRegressor
 
@@ -147,7 +147,7 @@ class EconMLWrapper:
         )
         return XLearner(models=models, propensity_model=kwargs.get("propensity_model"))
 
-    def _r_learner(self, **kwargs) -> Any:
+    def _r_learner(self, **kwargs: Any) -> Any:
         from econml.metalearners import RLearner
         from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 
@@ -155,7 +155,7 @@ class EconMLWrapper:
         propensity = kwargs.get("propensity_model", GradientBoostingClassifier(n_estimators=100))
         return RLearner(overall_model=model, propensity_model=propensity)
 
-    def _dr_learner(self, **kwargs) -> Any:
+    def _dr_learner(self, **kwargs: Any) -> Any:
         from econml.metalearners import DRLearner
         from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 
@@ -163,7 +163,7 @@ class EconMLWrapper:
         propensity = kwargs.get("propensity_model", GradientBoostingClassifier(n_estimators=100))
         return DRLearner(model_regression=model, model_propensity=propensity)
 
-    def _causal_forest(self, **kwargs) -> Any:
+    def _causal_forest(self, **kwargs: Any) -> Any:
         from econml.grf import CausalForest
 
         return CausalForest(
@@ -173,7 +173,7 @@ class EconMLWrapper:
             random_state=kwargs.get("random_state", 42),
         )
 
-    def _metalearner(self, **kwargs) -> Any:
+    def _metalearner(self, **kwargs: Any) -> Any:
         from econml.metalearners import Metalearner
 
         return Metalearner(**kwargs)
@@ -217,9 +217,9 @@ class UpliftModeler:
         self._T = self.data[self.treatment].values
         self._Y = self.data[self.outcome].values
 
-        self._uplift_model = None
+        self._uplift_model: Any = None
 
-    def fit(self, method: str = "causal_forest", **kwargs) -> "UpliftModeler":
+    def fit(self, method: str = "causal_forest", **kwargs: Any) -> "UpliftModeler":
         """Fit uplift model."""
         if method == "causal_forest":
             self._uplift_model = self._fit_causal_forest(**kwargs)
@@ -234,7 +234,7 @@ class UpliftModeler:
 
         return self
 
-    def _fit_causal_forest(self, **kwargs) -> Any:
+    def _fit_causal_forest(self, **kwargs: Any) -> Any:
         from econml.grf import CausalForest
 
         model = CausalForest(
@@ -246,7 +246,7 @@ class UpliftModeler:
         model.fit(self._Y, self._T, X=self._X)
         return model
 
-    def _fit_two_model(self, **kwargs) -> Any:
+    def _fit_two_model(self, **kwargs: Any) -> Any:
         from econml.metalearners import TLearner
         from sklearn.ensemble import GradientBoostingRegressor
 
@@ -259,7 +259,7 @@ class UpliftModeler:
         model.fit(self._Y, self._T, X=self._X)
         return model
 
-    def _fit_class_transformation(self, **kwargs) -> Any:
+    def _fit_class_transformation(self, **kwargs: Any) -> Any:
         from econml.metalearners import TransformedOutcome
         from sklearn.ensemble import GradientBoostingRegressor
 
@@ -267,7 +267,7 @@ class UpliftModeler:
         model.fit(self._Y, self._T, X=self._X)
         return model
 
-    def _fit_dr_learner(self, **kwargs) -> Any:
+    def _fit_dr_learner(self, **kwargs: Any) -> Any:
         from econml.metalearners import DRLearner
         from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 
@@ -284,7 +284,7 @@ class UpliftModeler:
             raise ValueError("Model not fitted. Call fit() first.")
         if X is None:
             X = self._X
-        return self._uplift_model.effect(X)
+        return np.asarray(self._uplift_model.effect(X))
 
     def evaluate(
         self, X_test: np.ndarray, T_test: np.ndarray, Y_test: np.ndarray

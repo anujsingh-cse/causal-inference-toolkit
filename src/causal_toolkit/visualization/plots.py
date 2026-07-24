@@ -38,7 +38,7 @@ class CausalGraphVisualizer:
         highlight_backdoor: bool = True,
         highlight_iv: bool = False,
         layout: str = "spring",
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """
         Plot DAG with treatment/outcome highlighted.
@@ -110,7 +110,7 @@ class CausalGraphVisualizer:
         plt.tight_layout()
         return fig
 
-    def _get_backdoor_nodes(self, G, treatment, outcome):
+    def _get_backdoor_nodes(self, G: Any, treatment: str, outcome: str) -> set[str]:
         """Get nodes on backdoor paths."""
         import networkx as nx
 
@@ -122,7 +122,7 @@ class CausalGraphVisualizer:
         except Exception:
             return set()
 
-    def _get_iv_nodes(self, G, treatment):
+    def _get_iv_nodes(self, G: Any, treatment: str) -> set[str]:
         """Get instrumental variable candidates."""
         import networkx as nx
 
@@ -149,7 +149,7 @@ class CausalGraphVisualizer:
         plt.tight_layout()
         return fig
 
-    def _plot_step_on_ax(self, ax, G, treatment, outcome, title):
+    def _plot_step_on_ax(self, ax: Any, G: Any, treatment: str, outcome: str, title: str) -> None:
         import networkx as nx
 
         pos = nx.spring_layout(G, k=1.5)
@@ -179,7 +179,7 @@ class ForestPlot:
         title: str = "Forest Plot",
         show_ci: bool = True,
         log_scale: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """
         Plot forest plot.
@@ -238,7 +238,7 @@ class ForestPlot:
         plt.tight_layout()
         return fig
 
-    def _plot_diamond(self, ax, center, left, right, y):
+    def _plot_diamond(self, ax: Any, center: float, left: float, right: float, y: float) -> None:
         """Plot diamond for overall estimate."""
         diamond_x = [left, center, right, center, left]
         diamond_y = [y, y + 0.15, y, y - 0.15, y]
@@ -307,7 +307,7 @@ class LovePlot:
         standardized_diffs: dict[str, tuple[float, float]],
         threshold: float = 0.1,
         title: str = "Covariate Balance (Love Plot)",
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """
         Plot standardized mean differences before/after adjustment.
@@ -363,7 +363,7 @@ class SensitivityPlot:
         p_values: list[float],
         alpha: float = 0.05,
         critical_gamma: float | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """Plot Rosenbaum bounds: p-value upper bound vs Gamma."""
         fig, ax = plt.subplots(figsize=self.figsize)
@@ -393,7 +393,7 @@ class SensitivityPlot:
         adjusted_estimates: np.ndarray,
         significant: np.ndarray,
         rv: float,
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """Plot TIPS contour for Cinelli-Hazlett sensitivity."""
         fig, ax = plt.subplots(figsize=self.figsize)
@@ -432,7 +432,7 @@ class UpliftPlot:
         treatment: np.ndarray,
         outcome: np.ndarray,
         n_bins: int = 10,
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """Plot Qini curve (cumulative uplift vs population fraction)."""
         fig, ax = plt.subplots(figsize=self.figsize)
@@ -512,7 +512,7 @@ class UpliftPlot:
         treatment: np.ndarray,
         outcome: np.ndarray,
         n_bins: int = 10,
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """Plot gain/decile chart."""
         fig, ax = plt.subplots(figsize=self.figsize)
@@ -614,7 +614,7 @@ class CounterfactualPlot:
         y0_samples: np.ndarray,  # Control potential outcomes
         y1_samples: np.ndarray,  # Treatment potential outcomes
         unit_id: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """Plot individual counterfactual outcome distributions."""
         fig, axes = plt.subplots(1, 2, figsize=(self.figsize[0] * 1.5, self.figsize[1]))
@@ -656,7 +656,7 @@ class CounterfactualPlot:
         plt.tight_layout()
         return fig
 
-    def plot_ite_distribution(self, ite_samples: np.ndarray, **kwargs) -> plt.Figure:
+    def plot_ite_distribution(self, ite_samples: np.ndarray, **kwargs: Any) -> plt.Figure:
         """Plot Individual Treatment Effect distribution."""
         fig, ax = plt.subplots(figsize=self.figsize)
 
@@ -687,29 +687,29 @@ class CounterfactualPlot:
 
 
 # Convenience functions
-def plot_causal_graph(*args, **kwargs) -> plt.Figure:
+def plot_causal_graph(*args: Any, **kwargs: Any) -> plt.Figure:
     return CausalGraphVisualizer().plot_dag(*args, **kwargs)
 
 
-def plot_forest(*args, **kwargs) -> plt.Figure:
+def plot_forest(*args: Any, **kwargs: Any) -> plt.Figure:
     return ForestPlot().plot(*args, **kwargs)
 
 
-def plot_love(*args, **kwargs) -> plt.Figure:
+def plot_love(*args: Any, **kwargs: Any) -> plt.Figure:
     return LovePlot().plot(*args, **kwargs)
 
 
-def plot_sensitivity_rosenbaum(*args, **kwargs) -> plt.Figure:
+def plot_sensitivity_rosenbaum(*args: Any, **kwargs: Any) -> plt.Figure:
     return SensitivityPlot().plot_rosenbaum(*args, **kwargs)
 
 
-def plot_sensitivity_ch(*args, **kwargs) -> plt.Figure:
+def plot_sensitivity_ch(*args: Any, **kwargs: Any) -> plt.Figure:
     return SensitivityPlot().plot_cinelli_hazlett(*args, **kwargs)
 
 
-def plot_qini(*args, **kwargs) -> plt.Figure:
+def plot_qini(*args: Any, **kwargs: Any) -> plt.Figure:
     return UpliftPlot().plot_qini(*args, **kwargs)
 
 
-def plot_counterfactual(*args, **kwargs) -> plt.Figure:
+def plot_counterfactual(*args: Any, **kwargs: Any) -> plt.Figure:
     return CounterfactualPlot().plot_distributions(*args, **kwargs)

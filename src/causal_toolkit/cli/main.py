@@ -29,7 +29,7 @@ def estimate(
     data: Path = typer.Option(..., "--data", "-d", help="Input data CSV"),
     out: Path = typer.Option(Path("results"), "--out", "-o", help="Output directory"),
     method: str = typer.Option("auto", "--method", "-m", help="Estimation method"),
-):
+) -> None:
     """
     Estimate causal effect from config and data.
 
@@ -61,7 +61,7 @@ def sensitivity(
         None, "--benchmark", "-b", help="Benchmark covariates"
     ),
     out: Path | None = typer.Option(None, "--out", "-o", help="Output plot file"),
-):
+) -> None:
     """
     Run sensitivity analysis on estimated causal effect.
     """
@@ -88,7 +88,7 @@ def ab_test(
     confidence: float = typer.Option(0.95, "--confidence", "-c", help="Confidence level"),
     mde: float = typer.Option(0.05, "--mde", help="Minimum detectable effect (relative)"),
     rope: float = typer.Option(0.01, "--rope", help="ROPE width for Bayesian"),
-):
+) -> None:
     """
     Run A/B test analysis.
     """
@@ -115,7 +115,7 @@ def uplift(
     ),
     plot: str = typer.Option("qini", "--plot", "-p", help="Plot type: qini, gain, both"),
     out: Path | None = typer.Option(None, "--out", "-o", help="Output plot file"),
-):
+) -> None:
     """
     Fit and evaluate uplift model.
     """
@@ -144,7 +144,7 @@ def graph(
     ),
     find_adjustment: bool = typer.Option(False, "--adjustment", help="Find valid adjustment sets"),
     out: Path | None = typer.Option(None, "--out", "-o", help="Output file"),
-):
+) -> None:
     """
     Visualize causal DAG with backdoor paths and adjustment sets.
     """
@@ -174,7 +174,7 @@ def counterfactual(
         "g_computation", "--method", "-m", help="Method: g_computation, tmle"
     ),
     out: Path | None = typer.Option(None, "--out", "-o", help="Output plot file"),
-):
+) -> None:
     """
     Compute and visualize individual counterfactuals.
     """
@@ -194,7 +194,7 @@ def demo(
     ),
     run_all: bool = typer.Option(False, "--all", help="Run all demos"),
     out: Path = typer.Option(Path("demo_output"), "--out", "-o", help="Output directory"),
-):
+) -> None:
     """
     Run demo notebooks on benchmark datasets.
     """
@@ -207,7 +207,7 @@ def demo(
 @app.command()
 def config_template(
     out: Path = typer.Option(Path("config.yaml"), "--out", "-o", help="Output config file"),
-):
+) -> None:
     """
     Generate example configuration YAML.
     """
@@ -241,7 +241,7 @@ def config_template(
 def validate(
     config: Path = typer.Option(..., "--config", "-c", help="Config file to validate"),
     data: Path = typer.Option(..., "--data", "-d", help="Data file to validate against"),
-):
+) -> None:
     """
     Validate config against data schema.
     """

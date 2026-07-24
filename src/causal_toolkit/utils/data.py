@@ -2,6 +2,8 @@
 Utility functions for Causal Inference Toolkit.
 """
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -84,7 +86,11 @@ def compute_all_smds(
 
 
 def propensity_score(
-    df: pd.DataFrame, treatment_col: str, covariates: list[str], model: str = "logistic", **kwargs
+    df: pd.DataFrame,
+    treatment_col: str,
+    covariates: list[str],
+    model: str = "logistic",
+    **kwargs: Any,
 ) -> np.ndarray:
     """
     Estimate propensity scores.
@@ -153,7 +159,7 @@ def effective_sample_size(weights: np.ndarray) -> float:
 
 def bootstrap_ci(
     data: np.ndarray,
-    statistic_fn,
+    statistic_fn: Any,
     n_bootstrap: int = 1000,
     confidence: float = 0.95,
     random_state: int = 42,
@@ -188,7 +194,7 @@ def bootstrap_ci(
 def bootstrap_ci_pairs(
     data_a: np.ndarray,
     data_b: np.ndarray,
-    statistic_fn,
+    statistic_fn: Any,
     n_bootstrap: int = 1000,
     confidence: float = 0.95,
     random_state: int = 42,
@@ -281,7 +287,7 @@ def _load_lalonde() -> pd.DataFrame:
     n_control = 15992  # PSID control size
 
     # Generate realistic covariates
-    def gen_group(n, treat_prob):
+    def gen_group(n: int, treat_prob: float) -> pd.DataFrame:
         age = np.random.normal(25, 8, n)
         educ = np.random.normal(10, 3, n).clip(0, 18).astype(int)
         black = np.random.binomial(1, 0.84, n)
@@ -309,7 +315,7 @@ def _load_lalonde() -> pd.DataFrame:
     control = gen_group(n_control, 0.0)
 
     # Outcome: 1978 earnings (re78)
-    def gen_outcome(df):
+    def gen_outcome(df: pd.DataFrame) -> Any:
         return (
             1000
             + 100 * df["age"]

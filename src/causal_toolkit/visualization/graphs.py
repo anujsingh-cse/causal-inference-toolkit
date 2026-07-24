@@ -462,7 +462,7 @@ class CausalGraphVisualizer:
 
         return fig
 
-    def to_graphviz(self, **kwargs) -> Any:
+    def to_graphviz(self, **kwargs: Any) -> Any:
         """Export to Graphviz for high-quality rendering."""
         if not HAS_GRAPHVIZ:
             raise ImportError("Graphviz not installed. Install with: pip install graphviz")
@@ -545,7 +545,7 @@ class InterventionVisualizer:
         interventional_data: dict[str, np.ndarray],
         treatment_name: str = "T",
         outcome_name: str = "Y",
-        **kwargs,
+        **kwargs: Any,
     ) -> plt.Figure:
         """
         Compare observational vs interventional distributions.
@@ -603,13 +603,13 @@ class InterventionVisualizer:
 
 
 # Convenience functions
-def plot_causal_dag(*args, **kwargs) -> plt.Figure:
+def plot_causal_dag(*args: Any, **kwargs: Any) -> plt.Figure:
     """Quick function to plot causal DAG."""
     return CausalGraphVisualizer().plot_dag(*args, **kwargs)
 
 
 def create_dag_from_spec(
-    edges: list[tuple[str, str]], treatment: str, outcome: str, **kwargs
+    edges: list[tuple[str, str]], treatment: str, outcome: str, **kwargs: Any
 ) -> CausalGraphVisualizer:
     """Factory function to create and configure visualizer."""
     return CausalGraphVisualizer().from_graph_spec(edges, treatment, outcome, **kwargs)

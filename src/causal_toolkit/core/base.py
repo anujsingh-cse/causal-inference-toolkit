@@ -147,7 +147,7 @@ class CausalEstimate:
     diagnostics: dict[str, Any] = field(default_factory=dict)
     estimand: CausalEstimand | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if isinstance(self.value, float):
             self.value = np.float64(self.value)
         if isinstance(self.ci_lower, float):
@@ -225,19 +225,19 @@ class CausalModel:
         self._refutations: list[RefutationResult] = []
 
     def identify(
-        self, strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR, **kwargs
+        self, strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR, **kwargs: Any
     ) -> CausalEstimand:
         """Identify causal estimand from graph and data."""
         # Delegates to DoWhy/EconML wrappers
         raise NotImplementedError("Use DoWhyWrapper or EconMLWrapper")
 
     def refute(
-        self, methods: list[RefutationMethod] | None = None, **kwargs
+        self, methods: list[RefutationMethod] | None = None, **kwargs: Any
     ) -> list[RefutationResult]:
         """Run refutation tests."""
         raise NotImplementedError("Use DoWhyWrapper or EconMLWrapper")
 
-    def sensitivity_analysis(self, method: str = "cinelli_hazlett", **kwargs) -> Any:
+    def sensitivity_analysis(self, method: str = "cinelli_hazlett", **kwargs: Any) -> Any:
         """Run sensitivity analysis."""
         raise NotImplementedError("Use SensitivityAnalyzer")
 
