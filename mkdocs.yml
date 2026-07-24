@@ -70,6 +70,8 @@ nav:
       - EconML Wrapper: user-guide/econml.md
       - A/B Testing: user-guide/ab-testing.md
       - Uplift Modeling: user-guide/uplift.md
+      - Synthetic Control: user-guide/synthetic-control.md
+      - Difference-in-Differences: user-guide/did.md
       - Visualization: user-guide/visualization.md
   - CLI Reference:
       - Estimate: cli/estimate.md
