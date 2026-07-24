@@ -156,9 +156,12 @@ class DoWhyWrapper:
     def _map_estimator(self, estimator: EstimatorType) -> str:
         mapping = {
             EstimatorType.LINEAR_REGRESSION: "backdoor.linear_regression",
-            EstimatorType.PROPENSITY_SCORE_MATCHING: "backdoor.propensity_score_matching",
-            EstimatorType.PROPENSITY_SCORE_WEIGHTING: "backdoor.propensity_score_weighting",
-            EstimatorType.PROPENSITY_SCORE_STRATIFICATION: "backdoor.propensity_score_stratification",
+            EstimatorType.PROPENSITY_SCORE_MATCHING:
+                "backdoor.propensity_score_matching",
+            EstimatorType.PROPENSITY_SCORE_WEIGHTING:
+                "backdoor.propensity_score_weighting",
+            EstimatorType.PROPENSITY_SCORE_STRATIFICATION:
+                "backdoor.propensity_score_stratification",
             EstimatorType.DOUBLY_ROBUST: "backdoor.doubly_robust",
             EstimatorType.TWO_STAGE_LS: "iv.instrumental_variable",
         }

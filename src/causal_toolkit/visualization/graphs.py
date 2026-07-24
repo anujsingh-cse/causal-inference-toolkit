@@ -56,9 +56,9 @@ class CausalGraphVisualizer:
         edges: list[tuple[str, str]],
         treatment: str,
         outcome: str,
-        common_causes: list[str] = None,
-        instruments: list[str] = None,
-        mediators: list[str] = None,
+        common_causes: list[str] | None = None,
+        instruments: list[str] | None = None,
+        mediators: list[str] | None = None,
     ) -> "CausalGraphVisualizer":
         """Build graph from edge list and variable roles."""
         self._graph = nx.DiGraph()
@@ -161,10 +161,7 @@ class CausalGraphVisualizer:
 
     def _blocks_all_paths(self, adjustment: set[str], paths: list[list[str]]) -> bool:
         """Check if adjustment set blocks all paths."""
-        for path in paths:
-            if not self._blocks_path(adjustment, path):
-                return False
-        return True
+        return all(self._blocks_path(adjustment, path) for path in paths)
 
     def _blocks_path(self, adjustment: set[str], path: list[str]) -> bool:
         """Check if adjustment set blocks a single path."""
@@ -410,7 +407,7 @@ class CausalGraphVisualizer:
                     x=[x0, x1, None],
                     y=[y0, y1, None],
                     mode="lines",
-                    line=dict(color="gray", width=1.5),
+                    line={"color": "gray", "width": 1.5},
                     hoverinfo="none",
                     showlegend=False,
                 )
@@ -429,7 +426,7 @@ class CausalGraphVisualizer:
                                 x=[x0, x1, None],
                                 y=[y0, y1, None],
                                 mode="lines",
-                                line=dict(color="red", width=3),
+                                line={"color": "red", "width": 3},
                                 hoverinfo="none",
                                 showlegend=False,
                             )
@@ -440,22 +437,22 @@ class CausalGraphVisualizer:
             x=x_nodes,
             y=y_nodes,
             mode="markers+text",
-            marker=dict(size=30, color=node_colors, line=dict(width=2, color="white")),
-            text=[n for n in self._graph.nodes()],
+            marker={"size": 30, "color": node_colors, "line": {"width": 2, "color": "white"}},
+            text=list(self._graph.nodes()),
             textposition="middle center",
             hovertext=node_texts,
             hoverinfo="text",
             showlegend=False,
         )
 
-        fig = go.Figure(data=edge_traces + [node_trace])
+        fig = go.Figure(data=[*edge_traces, node_trace])
         fig.update_layout(
             title=title,
             showlegend=False,
             hovermode="closest",
-            margin=dict(b=20, l=5, r=5, t=40),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            margin={"b": 20, "l": 5, "r": 5, "t": 40},
+            xaxis={"showgrid": False, "zeroline": False, "showticklabels": False},
+            yaxis={"showgrid": False, "zeroline": False, "showticklabels": False},
             plot_bgcolor="white",
         )
 
@@ -507,7 +504,7 @@ class CausalGraphVisualizer:
         steps = [f"Target: {query}"]
 
         if self._treatment is None or self._outcome is None:
-            return steps + ["Error: Treatment/outcome not specified"]
+            return [*steps, "Error: Treatment/outcome not specified"]
 
         # Step 1: Check if backdoor criterion satisfied
         adjustment_sets = self.find_adjustment_sets()

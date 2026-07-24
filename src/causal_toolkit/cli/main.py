@@ -14,7 +14,10 @@ from rich.console import Console
 
 app = typer.Typer(
     name="causal-toolkit",
-    help="Causal Inference Toolkit - CLI for DoWhy/EconML wrappers, sensitivity analysis, A/B testing, uplift modeling, counterfactuals",
+    help=(
+        "Causal Inference Toolkit - CLI for DoWhy/EconML wrappers, "
+        "sensitivity analysis, A/B testing, uplift modeling, counterfactuals"
+    ),
     no_args_is_help=True,
 )
 console = Console()
@@ -33,8 +36,7 @@ def estimate(
     Config should specify identification strategy, estimation method, refutation tests.
     """
     console.print(f"[bold green]Loading config from {config}[/bold green]")
-    with open(config) as f:
-        cfg = yaml.safe_load(f)
+    cfg = yaml.safe_load(config.read_text())
 
     console.print(f"[bold green]Loading data from {data}[/bold green]")
     df = pd.read_csv(data)
@@ -66,7 +68,7 @@ def sensitivity(
     console.print("[bold green]Running sensitivity analysis[/bold green]")
     console.print(f"Method: {method}")
 
-    df = pd.read_csv(data)
+    pd.read_csv(data)
 
     # TODO: Implement full sensitivity analysis CLI
     console.print("[yellow]Sensitivity analysis CLI not yet implemented[/yellow]")
@@ -93,7 +95,7 @@ def ab_test(
     console.print("[bold green]Running A/B test[/bold green]")
     console.print(f"{variant_a} vs {variant_b} on {outcome}")
 
-    df = pd.read_csv(data)
+    pd.read_csv(data)
 
     # TODO: Implement full A/B test CLI
     console.print("[yellow]A/B test CLI not yet implemented[/yellow]")
@@ -120,7 +122,7 @@ def uplift(
     console.print("[bold green]Running uplift modeling[/bold green]")
     console.print(f"Model: {model}, Plot: {plot}")
 
-    df = pd.read_csv(data)
+    pd.read_csv(data)
 
     # TODO: Implement full uplift CLI
     console.print("[yellow]Uplift modeling CLI not yet implemented[/yellow]")
@@ -179,7 +181,7 @@ def counterfactual(
     console.print("[bold green]Computing counterfactuals[/bold green]")
     console.print(f"Unit: {unit_id}, Treatment: {treatment_value}")
 
-    df = pd.read_csv(data)
+    pd.read_csv(data)
 
     # TODO: Implement full counterfactual CLI
     console.print("[yellow]Counterfactual CLI not yet implemented[/yellow]")
@@ -230,8 +232,7 @@ def config_template(
         }
     }
 
-    with open(out, "w") as f:
-        yaml.dump(template, f, default_flow_style=False)
+    out.write_text(yaml.dump(template, default_flow_style=False))
 
     console.print(f"[bold green]Config template saved to {out}[/bold green]")
 

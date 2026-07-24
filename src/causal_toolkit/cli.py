@@ -229,7 +229,7 @@ def ab_test(
     typer.echo(f"\n{result}")
 
     out.mkdir(parents=True, exist_ok=True)
-    with open(out / "ab_test.json", "w") as f:
+    with (out / "ab_test.json").open("w") as f:
         json.dump(
             {
                 "variant_a": variant_a,
@@ -368,7 +368,8 @@ def counterfactual(
 ):
     """Estimate individual counterfactual outcome."""
     typer.echo(
-        "[yellow]Counterfactual estimation requires fitted outcome models. Not yet implemented.[/yellow]"
+        "[yellow]Counterfactual estimation requires fitted "
+        "outcome models. Not yet implemented.[/yellow]"
     )
     raise typer.Exit(1)
 
@@ -447,10 +448,12 @@ def demo(
     typer.echo("Next steps:")
     typer.echo(f"  causal-toolkit estimate --config config.yaml --data {out}/{dataset}.csv")
     typer.echo(
-        f"  causal-toolkit sensitivity --data {out}/{dataset}.csv --treatment {treatment} --outcome {outcome}"
+        f"  causal-toolkit sensitivity --data {out}/{dataset}.csv "
+        f"--treatment {treatment} --outcome {outcome}"
     )
     typer.echo(
-        f"  causal-toolkit ab_test --data {out}/{dataset}.csv --variant treatment --outcome {outcome} --control 0 --treatment 1"
+        f"  causal-toolkit ab_test --data {out}/{dataset}.csv "
+        f"--variant treatment --outcome {outcome} --control 0 --treatment 1"
     )
 
 

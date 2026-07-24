@@ -53,10 +53,7 @@ class CausalGraphVisualizer:
         """
         import networkx as nx
 
-        if hasattr(graph, "graph"):
-            G = graph.graph
-        else:
-            G = graph
+        G = graph.graph if hasattr(graph, "graph") else graph
 
         fig, ax = plt.subplots(figsize=self.figsize)
 
@@ -70,7 +67,7 @@ class CausalGraphVisualizer:
         elif layout == "planar":
             try:
                 pos = nx.planar_layout(G)
-            except:
+            except Exception:
                 pos = nx.spring_layout(G)
         else:
             pos = nx.spring_layout(G)
@@ -122,7 +119,7 @@ class CausalGraphVisualizer:
             treatment_ancestors = set(nx.ancestors(G, treatment))
             outcome_ancestors = set(nx.ancestors(G, outcome))
             return treatment_ancestors & outcome_ancestors
-        except:
+        except Exception:
             return set()
 
     def _get_iv_nodes(self, G, treatment):
@@ -134,7 +131,7 @@ class CausalGraphVisualizer:
             treatment_ancestors = set(nx.ancestors(G, treatment))
             outcome_ancestors = set(nx.ancestors(G, treatment)) | {treatment}
             return treatment_ancestors - outcome_ancestors
-        except:
+        except Exception:
             return set()
 
     def plot_do_calculus_steps(self, steps: list[dict], treatment: str, outcome: str) -> plt.Figure:
@@ -188,7 +185,8 @@ class ForestPlot:
         Plot forest plot.
 
         Args:
-            estimates: List of dicts with keys: label, estimate, ci_lower, ci_upper, weight (optional)
+            estimates: List of dicts with keys:
+                label, estimate, ci_lower, ci_upper, weight (optional)
             xlabel: X-axis label
             title: Plot title
             show_ci: Show confidence intervals
@@ -217,7 +215,7 @@ class ForestPlot:
         ax.scatter(point_estimates, y_pos, color="red", s=50, zorder=5, label="Estimate")
 
         # Vertical line at null
-        null_val = 0 if not log_scale else 0
+        null_val = 0
         ax.axvline(null_val, color="gray", linestyle="--", linewidth=1)
 
         # Diamond for overall (if provided)
@@ -266,7 +264,7 @@ class ForestPlot:
                 y=np.concatenate([labels, labels[::-1]]),
                 fill="toself",
                 fillcolor="rgba(0,100,80,0.2)",
-                line=dict(color="rgba(255,255,255,0)"),
+                line={"color": "rgba(255,255,255,0)"},
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -278,7 +276,7 @@ class ForestPlot:
                 x=point_estimates,
                 y=labels,
                 mode="markers",
-                marker=dict(size=10, color="red"),
+                marker={"size": 10, "color": "red"},
                 name="Point Estimate",
                 hovertemplate="%{y}: %{x:.3f}<extra></extra>",
             )
@@ -290,7 +288,7 @@ class ForestPlot:
         fig.update_layout(
             title=title,
             xaxis_title=xlabel,
-            yaxis=dict(autorange="reversed"),
+            yaxis={"autorange": "reversed"},
             height=400 + 30 * len(labels),
             showlegend=False,
         )
@@ -364,14 +362,14 @@ class SensitivityPlot:
         gammas: list[float],
         p_values: list[float],
         alpha: float = 0.05,
-        critical_gamma: float = None,
+        critical_gamma: float | None = None,
         **kwargs,
     ) -> plt.Figure:
         """Plot Rosenbaum bounds: p-value upper bound vs Gamma."""
         fig, ax = plt.subplots(figsize=self.figsize)
 
         ax.plot(gammas, p_values, "b-", linewidth=2, label="Upper bound p-value")
-        ax.axhline(alpha, color="red", linestyle="--", label=f"α = {alpha}")
+        ax.axhline(alpha, color="red", linestyle="--", label=f"alpha = {alpha}")
         if critical_gamma:
             ax.axvline(
                 critical_gamma,
@@ -441,7 +439,7 @@ class UpliftPlot:
 
         # Sort by predicted uplift descending
         order = np.argsort(uplift)[::-1]
-        uplift_sorted = uplift[order]
+        uplift[order]
         treatment_sorted = treatment[order]
         outcome_sorted = outcome[order]
 
@@ -581,8 +579,8 @@ class UpliftPlot:
                 y=np.cumsum(model_y),
                 mode="lines+markers",
                 name="Model",
-                line=dict(color="blue", width=3),
-                marker=dict(size=6),
+                line={"color": "blue", "width": 3},
+                marker={"size": 6},
             )
         )
         fig.add_trace(
@@ -591,7 +589,7 @@ class UpliftPlot:
                 y=np.cumsum(random_y),
                 mode="lines",
                 name="Random",
-                line=dict(color="red", width=2, dash="dash"),
+                line={"color": "red", "width": 2, "dash": "dash"},
             )
         )
 
@@ -615,7 +613,7 @@ class CounterfactualPlot:
         self,
         y0_samples: np.ndarray,  # Control potential outcomes
         y1_samples: np.ndarray,  # Treatment potential outcomes
-        unit_id: int = None,
+        unit_id: int | None = None,
         **kwargs,
     ) -> plt.Figure:
         """Plot individual counterfactual outcome distributions."""
