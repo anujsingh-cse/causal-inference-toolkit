@@ -5,7 +5,8 @@ Unit tests for Difference-in-Differences (DiD) estimator.
 import numpy as np
 import pandas as pd
 import pytest
-from causal_toolkit.analysis.did import DifferenceInDifferences, DiDResult
+
+from causal_toolkit.analysis.did import DiDResult, DifferenceInDifferences
 
 
 @pytest.fixture
@@ -17,7 +18,8 @@ def sample_did_data():
     post = np.random.binomial(1, 0.5, size=n)
     true_att = 3.0
 
-    y = 10.0 + 2.0 * treatment + 1.5 * post + true_att * (treatment * post) + np.random.normal(0, 1.0, n)
+    noise = np.random.normal(0, 1.0, n)
+    y = 10.0 + 2.0 * treatment + 1.5 * post + true_att * (treatment * post) + noise
     return pd.DataFrame({"outcome": y, "treatment": treatment, "post": post})
 
 
@@ -40,7 +42,8 @@ def test_did_2x2_estimation(sample_did_data):
 
 def test_did_fit_panel(sample_did_data):
     # Add dummy unit and time columns
-    sample_did_data["unit"] = np.random.choice(["unit1", "unit2", "unit3"], size=len(sample_did_data))
+    units = ["unit1", "unit2", "unit3"]
+    sample_did_data["unit"] = np.random.choice(units, size=len(sample_did_data))
     sample_did_data["time"] = np.where(sample_did_data["post"] == 1, 2021, 2020)
 
     did = DifferenceInDifferences()
@@ -56,3 +59,4 @@ def test_did_fit_panel(sample_did_data):
     assert isinstance(res, DiDResult)
     assert res.att == pytest.approx(3.0, abs=0.5)
     assert res.parallel_trends_pvalue is not None
+

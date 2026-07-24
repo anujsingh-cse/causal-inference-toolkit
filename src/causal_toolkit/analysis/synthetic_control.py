@@ -5,7 +5,7 @@ Optimizes non-negative donor weights summing to 1 to construct a synthetic contr
 that matches the pre-treatment trajectory and characteristics of the treated unit.
 """
 
-from typing import Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
@@ -16,15 +16,15 @@ class SyntheticControlResult:
 
     def __init__(
         self,
-        treated_unit: Union[str, int],
-        weights: Dict[Union[str, int], float],
+        treated_unit: str | int,
+        weights: dict[str | int, float],
         pre_rmspe: float,
         post_rmspe: float,
         rmspe_ratio: float,
         att: float,
         time_series: pd.DataFrame,
-        placebo_results: Optional[Dict[Union[str, int], Dict[str, float]]] = None,
-        p_value: Optional[float] = None,
+        placebo_results: dict[str | int, dict[str, float]] | None = None,
+        p_value: float | None = None,
     ):
         self.treated_unit = treated_unit
         self.weights = weights
@@ -52,7 +52,7 @@ class SyntheticControl:
     outcome of the treated unit in the absence of treatment.
     """
 
-    def __init__(self, random_state: Optional[int] = None):
+    def __init__(self, random_state: int | None = None):
         self.random_state = random_state
 
     def fit_predict(
@@ -61,9 +61,9 @@ class SyntheticControl:
         unit_col: str,
         time_col: str,
         outcome_col: str,
-        treated_unit: Union[str, int],
-        treatment_time: Union[int, float, str],
-        covariates: Optional[List[str]] = None,
+        treated_unit: str | int,
+        treatment_time: int | float | str,
+        covariates: list[str] | None = None,
         run_placebos: bool = True,
     ) -> SyntheticControlResult:
         """
@@ -109,11 +109,19 @@ class SyntheticControl:
 
         # Fit weights for actual treated unit
         weights, pre_rmspe, post_rmspe, rmspe_ratio, att, ts_df = self._fit_unit(
-            pivot_y, treated_unit, donor_units, pre_mask, post_mask, covariates, data, unit_col, time_col
+            pivot_y,
+            treated_unit,
+            donor_units,
+            pre_mask,
+            post_mask,
+            covariates,
+            data,
+            unit_col,
+            time_col,
         )
 
-        placebo_res: Dict[Union[str, int], Dict[str, float]] = {}
-        p_value: Optional[float] = None
+        placebo_res: dict[str | int, dict[str, float]] = {}
+        p_value: float | None = None
 
         if run_placebos:
             actual_ratio = rmspe_ratio
@@ -122,7 +130,15 @@ class SyntheticControl:
             for placebo_u in donor_units:
                 p_donors = [u for u in units if u != placebo_u]
                 _, _, _, p_ratio, p_att, _ = self._fit_unit(
-                    pivot_y, placebo_u, p_donors, pre_mask, post_mask, covariates, data, unit_col, time_col
+                    pivot_y,
+                    placebo_u,
+                    p_donors,
+                    pre_mask,
+                    post_mask,
+                    covariates,
+                    data,
+                    unit_col,
+                    time_col,
                 )
                 placebo_res[placebo_u] = {"att": p_att, "rmspe_ratio": p_ratio}
                 ratio_list.append(p_ratio)
@@ -130,7 +146,7 @@ class SyntheticControl:
             # Permutation p-value: proportion of placebos with RMSPE ratio >= treated RMSPE ratio
             p_value = float(np.mean([r >= actual_ratio for r in ratio_list]))
 
-        weight_dict = {u: float(w) for u, w in zip(donor_units, weights)}
+        weight_dict = {u: float(w) for u, w in zip(donor_units, weights, strict=False)}
 
         return SyntheticControlResult(
             treated_unit=treated_unit,
@@ -147,15 +163,15 @@ class SyntheticControl:
     def _fit_unit(
         self,
         pivot_y: pd.DataFrame,
-        target_unit: Union[str, int],
-        donor_units: List[Union[str, int]],
+        target_unit: str | int,
+        donor_units: list[str | int],
         pre_mask: pd.Series,
         post_mask: pd.Series,
-        covariates: Optional[List[str]],
+        covariates: list[str] | None,
         raw_data: pd.DataFrame,
         unit_col: str,
         time_col: str,
-    ) -> Tuple[np.ndarray, float, float, float, float, pd.DataFrame]:
+    ) -> tuple[np.ndarray, float, float, float, float, pd.DataFrame]:
         # Pre-treatment target outcome
         y_pre_target = pivot_y.loc[pre_mask, target_unit].values
         # Pre-treatment donor outcomes

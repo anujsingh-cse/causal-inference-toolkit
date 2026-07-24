@@ -2,9 +2,9 @@
 Unit tests for CausalReportGenerator.
 """
 
-import os
 import tempfile
-import pytest
+from pathlib import Path
+
 from causal_toolkit.reports.generator import CausalReportGenerator
 
 
@@ -38,10 +38,11 @@ def test_causal_report_generator_save_file():
     estimate_summary = {"value": 1.2, "se": 0.1, "p_value": 0.02}
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        out_path = os.path.join(tmpdir, "report.html")
-        saved_path = gen.save_report(out_path, estimate_summary=estimate_summary)
+        out_path = Path(tmpdir) / "report.html"
+        saved_path = gen.save_report(str(out_path), estimate_summary=estimate_summary)
 
-        assert os.path.exists(saved_path)
-        with open(saved_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            assert "1.2000" in content
+        p = Path(saved_path)
+        assert p.exists()
+        content = p.read_text(encoding="utf-8")
+        assert "1.2000" in content
+

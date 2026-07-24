@@ -5,7 +5,6 @@ Supports classic 2x2 DiD, Two-Way Fixed Effects (TWFE), parallel trends verifica
 and event study dynamic effect estimation.
 """
 
-from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -22,8 +21,8 @@ class DiDResult:
         p_value: float,
         ci_lower: float,
         ci_upper: float,
-        parallel_trends_pvalue: Optional[float] = None,
-        event_study_effects: Optional[pd.DataFrame] = None,
+        parallel_trends_pvalue: float | None = None,
+        event_study_effects: pd.DataFrame | None = None,
         model_type: str = "2x2",
     ):
         self.att = att
@@ -68,7 +67,7 @@ class DifferenceInDifferences:
         outcome_col: str,
         treatment_col: str,
         post_col: str,
-        covariates: Optional[List[str]] = None,
+        covariates: list[str] | None = None,
     ) -> DiDResult:
         """
         Classic 2x2 Difference-in-Differences estimation.
@@ -114,8 +113,8 @@ class DifferenceInDifferences:
         time_col: str,
         outcome_col: str,
         treatment_col: str,
-        treatment_start_time: Optional[Union[int, float, str]] = None,
-        covariates: Optional[List[str]] = None,
+        treatment_start_time: int | float | str | None = None,
+        covariates: list[str] | None = None,
     ) -> DiDResult:
         """
         Panel Two-Way Fixed Effects (TWFE) DiD with parallel trends test & event study.
@@ -125,14 +124,17 @@ class DifferenceInDifferences:
         # Compute post indicator if treatment_start_time supplied
         if "post" not in df.columns:
             if treatment_start_time is None:
-                raise ValueError("Specify treatment_start_time when 'post' column not in DataFrame.")
+                msg = "Specify treatment_start_time when 'post' column not in DataFrame."
+                raise ValueError(msg)
             df["post"] = (df[time_col] >= treatment_start_time).astype(int)
 
         # 2x2 estimation base
         res_2x2 = self.estimate_2x2(df, outcome_col, treatment_col, "post", covariates)
 
         # Parallel trends test in pre-treatment period
-        pt_pval = self.test_parallel_trends(df, unit_col, time_col, outcome_col, treatment_col, "post")
+        pt_pval = self.test_parallel_trends(
+            df, unit_col, time_col, outcome_col, treatment_col, "post"
+        )
 
         # Event study relative period estimation if numeric time_col and treatment_start_time given
         event_df = None
@@ -184,7 +186,7 @@ class DifferenceInDifferences:
         X = pre_df[X_cols].values
         y = pre_df[outcome_col].values
 
-        beta, se, t_stat, p_val, _, _ = self._ols_regression(X, y)
+        _, _, _, p_val, _, _ = self._ols_regression(X, y)
         inter_idx = X_cols.index("time_treat_interaction")
 
         return float(p_val[inter_idx])
@@ -195,7 +197,7 @@ class DifferenceInDifferences:
         time_col: str,
         outcome_col: str,
         treatment_col: str,
-        treatment_start_time: Union[int, float],
+        treatment_start_time: int | float,
     ) -> pd.DataFrame:
         """Compute mean outcome dynamic trajectory by period relative to treatment."""
         df_event = df.copy()
@@ -211,7 +213,7 @@ class DifferenceInDifferences:
     def _ols_regression(self, X: np.ndarray, y: np.ndarray):
         n, k = X.shape
         dof = max(1, n - k)
-        beta, residuals, rank, s = np.linalg.lstsq(X, y, rcond=None)
+        beta, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
 
         y_pred = X @ beta
         resids = y - y_pred

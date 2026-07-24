@@ -5,6 +5,7 @@ Unit tests for Synthetic Control method.
 import numpy as np
 import pandas as pd
 import pytest
+
 from causal_toolkit.analysis.synthetic_control import SyntheticControl, SyntheticControlResult
 
 
@@ -26,7 +27,7 @@ def sample_panel_data():
         if u == "A":
             y[5:] += 10.0
 
-        for t, val in zip(times, y):
+        for t, val in zip(times, y, strict=False):
             rows.append({"unit": u, "time": t, "outcome": val})
 
     return pd.DataFrame(rows)
