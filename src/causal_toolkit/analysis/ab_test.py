@@ -29,6 +29,7 @@ class ABTestType(str, Enum):
 # Backward-compatible alias (renamed to avoid pytest collection warning)
 TestType = ABTestType
 
+
 class Alternative(str, Enum):
     """Alternative hypothesis."""
 
@@ -383,19 +384,19 @@ class ABTestAnalyzer:
             alternative=Alternative.TWO_SIDED,
             estimate_a=data.rate_a,
             estimate_b=data.rate_b,
-            difference=np.mean(diff_samples),
-            relative_difference=np.mean(rel_diff_samples),
+            difference=float(np.mean(diff_samples)),
+            relative_difference=float(np.mean(rel_diff_samples)),
             statistic=0,  # Not applicable
             p_value=0,  # Not applicable
-            ci_lower=ci_lower,
-            ci_upper=ci_upper,
+            ci_lower=float(ci_lower),
+            ci_upper=float(ci_upper),
             confidence_level=self.confidence_level,
             n_a=data.n_a,
             n_b=data.n_b,
-            prob_b_better=prob_b_better,
-            rope_probability=rope_prob,
-            expected_loss_a=expected_loss_a,
-            expected_loss_b=expected_loss_b,
+            prob_b_better=float(prob_b_better),
+            rope_probability=float(rope_prob),
+            expected_loss_a=float(expected_loss_a),
+            expected_loss_b=float(expected_loss_b),
         )
 
     def bayesian_normal(
@@ -453,7 +454,7 @@ class ABTestAnalyzer:
         # For small effects: proportion_effectsize ≈ (p2-p1)/sqrt(p1*(1-p1))
         se = np.sqrt(baseline_rate * (1 - baseline_rate))
         mde = effect_size * se / baseline_rate
-        return mde
+        return float(mde)
 
     # ==================== Multiple Testing ====================
 
@@ -500,7 +501,7 @@ class ABTestAnalyzer:
         data: ABTestData,
         test_type: ABTestType = ABTestType.PROPORTION,
         method: str = "frequentist",
-        **kwargs,
+        **kwargs: Any,
     ) -> ABTestResult:
         """
         Main analysis entry point.

@@ -141,6 +141,7 @@ class CausalGraphVisualizer:
             return [[]]
 
         # Find nodes that block all backdoor paths (excluding treatment/outcome)
+        assert self._graph is not None
         candidates = set(self._graph.nodes()) - {self._treatment, self._outcome}
 
         valid_sets = []
@@ -170,6 +171,7 @@ class CausalGraphVisualizer:
             prev, curr, nxt = path[i - 1], path[i], path[i + 1]
 
             # Check if curr is collider: prev -> curr <- nxt
+            assert self._graph is not None
             is_collider = self._graph.has_edge(prev, curr) and self._graph.has_edge(nxt, curr)
 
             if is_collider:
@@ -369,9 +371,11 @@ class CausalGraphVisualizer:
         if self._graph is None:
             raise ValueError("No graph loaded.")
 
+        pos: dict[Any, Any] = nx.spring_layout(self._graph, seed=42)
+
         # Prepare nodes
-        x_nodes = [self._pos[n][0] for n in self._graph.nodes()]
-        y_nodes = [self._pos[n][1] for n in self._graph.nodes()]
+        x_nodes = [pos[n][0] for n in self._graph.nodes()]
+        y_nodes = [pos[n][1] for n in self._graph.nodes()]
 
         node_texts = []
         node_colors = []
@@ -400,8 +404,8 @@ class CausalGraphVisualizer:
         # Edges
         edge_traces = []
         for u, v in self._graph.edges():
-            x0, y0 = self._pos[u]
-            x1, y1 = self._pos[v]
+            x0, y0 = pos[u]
+            x1, y1 = pos[v]
             edge_traces.append(
                 go.Scatter(
                     x=[x0, x1, None],
@@ -419,8 +423,8 @@ class CausalGraphVisualizer:
             for path in backdoor_paths:
                 for i in range(len(path) - 1):
                     if self._graph.has_edge(path[i + 1], path[i]):
-                        x0, y0 = self._pos[path[i + 1]]
-                        x1, y1 = self._pos[path[i]]
+                        x0, y0 = pos[path[i + 1]]
+                        x1, y1 = pos[path[i]]
                         edge_traces.append(
                             go.Scatter(
                                 x=[x0, x1, None],
@@ -463,6 +467,7 @@ class CausalGraphVisualizer:
         if not HAS_GRAPHVIZ:
             raise ImportError("Graphviz not installed. Install with: pip install graphviz")
 
+        assert self._graph is not None
         dot = graphviz.Digraph(**kwargs)
 
         # Add nodes with styling

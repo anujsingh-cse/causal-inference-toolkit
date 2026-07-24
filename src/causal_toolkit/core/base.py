@@ -167,9 +167,9 @@ class CausalEstimate:
 
     def __str__(self) -> str:
         if isinstance(self.value, np.ndarray):
-            mean_val = self.value.mean()
-            ci_l = self.ci_lower.mean()
-            ci_u = self.ci_upper.mean()
+            mean_val = float(np.mean(self.value))
+            ci_l = float(np.mean(self.ci_lower))
+            ci_u = float(np.mean(self.ci_upper))
             return (
                 f"CATE estimate (n={len(self.value)}): "
                 f"mean={mean_val:.4f}, CI=[{ci_l:.4f}, {ci_u:.4f}]"

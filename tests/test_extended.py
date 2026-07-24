@@ -13,10 +13,7 @@ from causal_toolkit.analysis.ab_test import (
     Alternative,
     TestType,
 )
-from causal_toolkit.analysis.sensitivity import (
-    SensitivityAnalyzer,
-    run_sensitivity_suite,
-)
+from causal_toolkit.analysis.sensitivity import SensitivityAnalyzer, run_sensitivity_suite
 from causal_toolkit.core.base import (
     Assumptions,
     CausalEstimand,
@@ -248,7 +245,9 @@ class TestDataUtilsExtended:
         rng = np.random.RandomState(42)
         a = rng.normal(5.0, 1.0, 100)
         b = rng.normal(6.0, 1.0, 100)
-        lower, upper = bootstrap_ci_pairs(a, b, lambda x, y: np.mean(y) - np.mean(x), n_bootstrap=500)
+        lower, _upper = bootstrap_ci_pairs(
+            a, b, lambda x, y: np.mean(y) - np.mean(x), n_bootstrap=500
+        )
         assert lower > 0  # b clearly larger
 
     def test_create_synthetic_no_heterogeneity(self):
@@ -321,18 +320,13 @@ class TestCoreModelExtended:
         assert len(violations) == 2
 
     def test_causal_estimate_not_significant(self):
-        est = CausalEstimate(
-            value=0.1, ci_lower=-0.5, ci_upper=0.7, p_value=0.5, n_samples=100
-        )
+        est = CausalEstimate(value=0.1, ci_lower=-0.5, ci_upper=0.7, p_value=0.5, n_samples=100)
         assert est.is_significant is False
 
     def test_causal_estimate_array_value(self):
         values = np.array([1.0, 2.0, 3.0])
         est = CausalEstimate(
-            value=values,
-            ci_lower=values - 0.5,
-            ci_upper=values + 0.5,
-            n_samples=3,
+            value=values, ci_lower=values - 0.5, ci_upper=values + 0.5, n_samples=3
         )
         assert "CATE" in str(est)
         moe = est.margin_of_error
@@ -340,10 +334,7 @@ class TestCoreModelExtended:
 
     def test_causal_estimand_str(self):
         estimand = CausalEstimand(
-            expression="E[Y|do(T=1)]",
-            estimand_type="ATE",
-            treatment="T",
-            outcome="Y",
+            expression="E[Y|do(T=1)]", estimand_type="ATE", treatment="T", outcome="Y"
         )
         assert "ATE" in str(estimand)
 
@@ -399,23 +390,17 @@ class TestABTestExtended:
 
     def test_from_dataframe_proportion(self):
         df = pd.DataFrame(
-            {
-                "group": ["A", "A", "A", "B", "B", "B"],
-                "converted": [0, 1, 0, 1, 1, 0],
-            }
+            {"group": ["A", "A", "A", "B", "B", "B"], "converted": [0, 1, 0, 1, 1, 0]}
         )
-        ab_data = self.analyzer.from_dataframe(df, "group", "converted", "A", "B", ABTestType.PROPORTION)
+        ab_data = self.analyzer.from_dataframe(
+            df, "group", "converted", "A", "B", ABTestType.PROPORTION
+        )
         assert ab_data.n_a == 3
         assert ab_data.n_b == 3
         assert ab_data.successes_a == 1
 
     def test_from_dataframe_mean(self):
-        df = pd.DataFrame(
-            {
-                "group": ["A", "A", "B", "B"],
-                "revenue": [10.0, 20.0, 15.0, 25.0],
-            }
-        )
+        df = pd.DataFrame({"group": ["A", "A", "B", "B"], "revenue": [10.0, 20.0, 15.0, 25.0]})
         ab_data = self.analyzer.from_dataframe(df, "group", "revenue", "A", "B", ABTestType.MEAN)
         assert ab_data.n_a == 2
         assert ab_data.sum_a == 30.0

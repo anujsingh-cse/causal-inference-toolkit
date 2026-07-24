@@ -26,7 +26,7 @@ class DoWhyWrapper:
 
     def __init__(self, causal_model: CausalModel):
         self.model = causal_model
-        self._dowhy_model = None
+        self._dowhy_model: Any = None
         self._build_dowhy_model()
 
     def _build_dowhy_model(self) -> None:
@@ -74,11 +74,13 @@ class DoWhyWrapper:
         return f"digraph {{\n  {graph_body};\n}}"
 
     def identify(
-        self, strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR, **kwargs
+        self, strategy: IdentificationStrategy = IdentificationStrategy.BACKDOOR, **kwargs: Any
     ) -> CausalEstimand:
         """Identify causal estimand using DoWhy."""
         if self._dowhy_model is None:
             self._build_dowhy_model()
+
+        assert self._dowhy_model is not None
 
         # Map strategy to DoWhy method
         dowhy_method = self._map_strategy(strategy)
@@ -111,10 +113,13 @@ class DoWhyWrapper:
         }
         return mapping.get(strategy, "default")
 
-    def estimate(self, estimator: EstimatorType, **estimator_kwargs) -> CausalEstimate:
+    def estimate(self, estimator: EstimatorType, **estimator_kwargs: Any) -> CausalEstimate:
         """Estimate causal effect using DoWhy's estimators."""
         if self.model._estimand is None:
             self.identify()
+
+        assert self._dowhy_model is not None
+        assert self.model._estimand is not None
 
         dowhy_estimator = self._map_estimator(estimator)
         estimate = self._dowhy_model.estimate_effect(
@@ -156,23 +161,26 @@ class DoWhyWrapper:
     def _map_estimator(self, estimator: EstimatorType) -> str:
         mapping = {
             EstimatorType.LINEAR_REGRESSION: "backdoor.linear_regression",
-            EstimatorType.PROPENSITY_SCORE_MATCHING:
-                "backdoor.propensity_score_matching",
-            EstimatorType.PROPENSITY_SCORE_WEIGHTING:
-                "backdoor.propensity_score_weighting",
-            EstimatorType.PROPENSITY_SCORE_STRATIFICATION:
-                "backdoor.propensity_score_stratification",
+            EstimatorType.PROPENSITY_SCORE_MATCHING: "backdoor.propensity_score_matching",
+            EstimatorType.PROPENSITY_SCORE_WEIGHTING: "backdoor.propensity_score_weighting",
+            EstimatorType.PROPENSITY_SCORE_STRATIFICATION: (
+                "backdoor.propensity_score_stratification"
+            ),
             EstimatorType.DOUBLY_ROBUST: "backdoor.doubly_robust",
             EstimatorType.TWO_STAGE_LS: "iv.instrumental_variable",
         }
         return mapping.get(estimator, "backdoor.linear_regression")
 
     def refute(
-        self, methods: list[RefutationMethod] | None = None, **kwargs
+        self, methods: list[RefutationMethod] | None = None, **kwargs: Any
     ) -> list[RefutationResult]:
         """Run refutation tests."""
         if self.model._estimate is None:
             self.estimate(EstimatorType.LINEAR_REGRESSION)
+
+        assert self._dowhy_model is not None
+        assert self.model._estimand is not None
+        assert self.model._estimate is not None
 
         if methods is None:
             methods = [
@@ -223,11 +231,15 @@ class DoWhyWrapper:
         }
         return mapping.get(method, "random_common_cause")
 
-    def sensitivity_analysis(self, method: str = "cinelli_hazlett", **kwargs) -> Any:
+    def sensitivity_analysis(self, method: str = "cinelli_hazlett", **kwargs: Any) -> Any:
         """Run sensitivity analysis."""
-        from causal_toolkit.analysis.sensitivity import SensitivityAnalyzer
+        from causal_toolkit.analysis.sensitivity import run_sensitivity_suite
 
-        return SensitivityAnalyzer(self.model).analyze(method=method, **kwargs)
+        if self.model._estimate is None:
+            self.estimate(EstimatorType.LINEAR_REGRESSION)
+
+        assert self.model._estimate is not None
+        return run_sensitivity_suite(self.model._estimate, self.model, **kwargs)
 
 
 def create_dowhy_model(causal_model: CausalModel) -> DoWhyWrapper:

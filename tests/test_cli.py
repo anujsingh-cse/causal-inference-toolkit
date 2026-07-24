@@ -4,10 +4,6 @@ CLI tests for Causal Inference Toolkit.
 Tests CLI commands via typer.testing.CliRunner without spawning subprocesses.
 """
 
-import json
-import tempfile
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -36,13 +32,7 @@ def synthetic_csv(tmp_dir):
     outcome = 10 + X[:, 0] + 2 * treatment + np.random.randn(n)
 
     df = pd.DataFrame(
-        {
-            "x0": X[:, 0],
-            "x1": X[:, 1],
-            "x2": X[:, 2],
-            "treatment": treatment,
-            "outcome": outcome,
-        }
+        {"x0": X[:, 0], "x1": X[:, 1], "x2": X[:, 2], "treatment": treatment, "outcome": outcome}
     )
     path = tmp_dir / "data.csv"
     df.to_csv(path, index=False)
@@ -64,7 +54,7 @@ def config_yaml(tmp_dir):
         }
     }
     path = tmp_dir / "config.yaml"
-    with open(path, "w") as f:
+    with path.open("w") as f:
         yaml.dump(cfg, f)
     return path
 
@@ -76,9 +66,7 @@ def ab_csv(tmp_dir):
     n = 500
     variant = np.random.choice(["control", "treatment"], n)
     conversion = np.where(
-        variant == "treatment",
-        np.random.binomial(1, 0.12, n),
-        np.random.binomial(1, 0.10, n),
+        variant == "treatment", np.random.binomial(1, 0.12, n), np.random.binomial(1, 0.10, n)
     )
     df = pd.DataFrame({"variant": variant, "conversion": conversion})
     path = tmp_dir / "ab_data.csv"
@@ -102,11 +90,16 @@ class TestPowerCommand:
             app,
             [
                 "power",
-                "--baseline", "0.15",
-                "--mde", "0.10",
-                "--alpha", "0.01",
-                "--power", "0.9",
-                "--ratio", "2.0",
+                "--baseline",
+                "0.15",
+                "--mde",
+                "0.10",
+                "--alpha",
+                "0.01",
+                "--power",
+                "0.9",
+                "--ratio",
+                "2.0",
             ],
         )
         assert result.exit_code == 0
@@ -117,13 +110,17 @@ class TestDemoCommand:
     """Test demo CLI command."""
 
     def test_demo_synthetic(self, tmp_dir):
-        result = runner.invoke(app, ["demo", "--dataset", "synthetic", "--out", str(tmp_dir / "demo")])
+        result = runner.invoke(
+            app, ["demo", "--dataset", "synthetic", "--out", str(tmp_dir / "demo")]
+        )
         assert result.exit_code == 0
         assert "Demo completed" in result.output
         assert (tmp_dir / "demo" / "synthetic.csv").exists()
 
     def test_demo_ihdp(self, tmp_dir):
-        result = runner.invoke(app, ["demo", "--dataset", "ihdp", "--out", str(tmp_dir / "demo_ihdp")])
+        result = runner.invoke(
+            app, ["demo", "--dataset", "ihdp", "--out", str(tmp_dir / "demo_ihdp")]
+        )
         assert result.exit_code == 0
         assert "Demo completed" in result.output
 
@@ -136,14 +133,22 @@ class TestCounterfactualCommand:
             app,
             [
                 "counterfactual",
-                "--data", str(synthetic_csv),
-                "--unit", "0",
-                "--treatment", "1.0",
-                "--outcome", "outcome",
-                "--treatment-col", "treatment",
-                "--covariates", "x0",
-                "--covariates", "x1",
-                "--out", str(tmp_dir / "cf"),
+                "--data",
+                str(synthetic_csv),
+                "--unit",
+                "0",
+                "--treatment",
+                "1.0",
+                "--outcome",
+                "outcome",
+                "--treatment-col",
+                "treatment",
+                "--covariates",
+                "x0",
+                "--covariates",
+                "x1",
+                "--out",
+                str(tmp_dir / "cf"),
             ],
         )
         assert result.exit_code == 1
@@ -157,12 +162,11 @@ class TestGraphCommand:
         """Config missing treatment/outcome should error."""
         cfg = {"edges": []}
         cfg_path = tmp_dir / "bad_graph.yaml"
-        with open(cfg_path, "w") as f:
+        with cfg_path.open("w") as f:
             yaml.dump(cfg, f)
 
         result = runner.invoke(
-            app,
-            ["graph", "--config", str(cfg_path), "--out", str(tmp_dir / "graph_out")],
+            app, ["graph", "--config", str(cfg_path), "--out", str(tmp_dir / "graph_out")]
         )
         assert result.exit_code == 1
 

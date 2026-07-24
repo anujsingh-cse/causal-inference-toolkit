@@ -32,9 +32,9 @@ class SensitivityResult:
     benchmark_r2_yz: float | None = None
     benchmark_r2_zd: float | None = None
     conclusion_reversed: bool = False
-    details: dict[str, Any] = None
+    details: dict[str, Any] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.details is None:
             self.details = {}
 
@@ -45,7 +45,9 @@ class SensitivityResult:
                 f"conclusion_reversed={self.conclusion_reversed}"
             )
         elif self.method == "cinelli_hazlett":
-            rv_str = f"RV={self.robustness_value:.4f}" if self.robustness_value is not None else "RV=N/A"
+            rv_str = (
+                f"RV={self.robustness_value:.4f}" if self.robustness_value is not None else "RV=N/A"
+            )
             r2_yz_str = f"R²_yz={self.r2_yz_dx:.4f}" if self.r2_yz_dx is not None else "R²_yz=N/A"
             r2_zd_str = f"R²_zd={self.r2_zd_x:.4f}" if self.r2_zd_x is not None else "R²_zd=N/A"
             return f"Cinelli-Hazlett: {rv_str}, {r2_yz_str}, {r2_zd_str}"
@@ -184,9 +186,9 @@ class SensitivityAnalyzer:
         rv_sig = abs(t_stat) / np.sqrt(df + t_stat**2)
 
         # RV for estimate to reduce to zero
-        rv_est = abs(estimate.value) / np.sqrt(
-            df * estimate.standard_error**2 + estimate.value**2 / df
-        )
+        se_val = estimate.standard_error if estimate.standard_error is not None else 0.1
+        val_mean = float(np.mean(estimate.value))
+        rv_est = abs(val_mean) / float(np.sqrt(df * se_val**2 + val_mean**2 / df))
 
         robustness_value = min(rv_sig, rv_est)  # Conservative
 
@@ -281,15 +283,17 @@ class SensitivityAnalyzer:
 
         # Convert to relative risk scale if needed
         # Assume estimate.value is log-RR or coefficient
-        rr_estimate = np.exp(abs(estimate.value))
-        e_value = rr_estimate + np.sqrt(rr_estimate * (rr_estimate - 1))
+        val_float = float(np.mean(estimate.value))
+        rr_estimate = float(np.exp(abs(val_float)))
+        e_value = float(rr_estimate + np.sqrt(rr_estimate * (rr_estimate - 1)))
 
         # E-value for CI limit
         if estimate.ci_lower is not None and estimate.ci_upper is not None:
             # Use the CI limit closer to null
-            ci_limit = estimate.ci_lower if estimate.value > 0 else estimate.ci_upper
-            rr_ci = np.exp(abs(ci_limit))
-            e_value_ci = rr_ci + np.sqrt(rr_ci * (rr_ci - 1))
+            ci_lim = estimate.ci_lower if val_float > 0 else estimate.ci_upper
+            ci_float = float(np.mean(ci_lim))
+            rr_ci = float(np.exp(abs(ci_float)))
+            e_value_ci = float(rr_ci + np.sqrt(rr_ci * (rr_ci - 1)))
         else:
             e_value_ci = e_value
 

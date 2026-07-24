@@ -111,7 +111,7 @@ def propensity_score(
         raise ValueError(f"Unknown model: {model}")
 
     clf.fit(X, T)
-    return clf.predict_proba(X)[:, 1]
+    return np.asarray(clf.predict_proba(X)[:, 1])
 
 
 def inverse_probability_weighting(
@@ -148,7 +148,7 @@ def trim_weights(
 
 def effective_sample_size(weights: np.ndarray) -> float:
     """Compute effective sample size from weights."""
-    return (np.sum(weights) ** 2) / np.sum(weights**2)
+    return float((np.sum(weights) ** 2) / np.sum(weights**2))
 
 
 def bootstrap_ci(
@@ -177,10 +177,10 @@ def bootstrap_ci(
         sample = data[idx]
         stats.append(statistic_fn(sample))
 
-    stats = np.array(stats)
+    stats_arr = np.array(stats)
     alpha = 1 - confidence
-    lower = np.percentile(stats, 100 * alpha / 2)
-    upper = np.percentile(stats, 100 * (1 - alpha / 2))
+    lower = np.percentile(stats_arr, 100 * alpha / 2)
+    upper = np.percentile(stats_arr, 100 * (1 - alpha / 2))
 
     return float(lower), float(upper)
 
@@ -203,10 +203,10 @@ def bootstrap_ci_pairs(
         idx_b = rng.choice(n_b, n_b, replace=True)
         stats.append(statistic_fn(data_a[idx_a], data_b[idx_b]))
 
-    stats = np.array(stats)
+    stats_arr = np.array(stats)
     alpha = 1 - confidence
-    lower = np.percentile(stats, 100 * alpha / 2)
-    upper = np.percentile(stats, 100 * (1 - alpha / 2))
+    lower = np.percentile(stats_arr, 100 * alpha / 2)
+    upper = np.percentile(stats_arr, 100 * (1 - alpha / 2))
 
     return float(lower), float(upper)
 

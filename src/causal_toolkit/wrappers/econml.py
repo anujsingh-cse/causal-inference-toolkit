@@ -45,7 +45,7 @@ class EconMLWrapper:
 
         self._models: dict[str, Any] = {}
 
-    def estimate_cate(self, estimator: EstimatorType, **estimator_kwargs) -> CausalEstimate:
+    def estimate_cate(self, estimator: EstimatorType, **estimator_kwargs: Any) -> CausalEstimate:
         """Estimate Conditional Average Treatment Effect (CATE)."""
         estimator_func = self._get_estimator(estimator, **estimator_kwargs)
         estimator_func.fit(self._Y, self._T, X=self._X, W=self._X_mod)
@@ -68,17 +68,18 @@ class EconMLWrapper:
             },
         )
 
-    def estimate_ate(self, estimator: EstimatorType, **estimator_kwargs) -> CausalEstimate:
+    def estimate_ate(self, estimator: EstimatorType, **estimator_kwargs: Any) -> CausalEstimate:
         """Estimate Average Treatment Effect (ATE)."""
         cate_estimate = self.estimate_cate(estimator, **estimator_kwargs)
-        ate = np.mean(cate_estimate.value)
-        ate_se = np.std(cate_estimate.value) / np.sqrt(len(cate_estimate.value))
+        cate_vals = np.asarray(cate_estimate.value)
+        ate = float(np.mean(cate_vals))
+        ate_se = float(np.std(cate_vals) / np.sqrt(len(cate_vals)))
 
         from scipy import stats
 
         z = stats.norm.ppf(0.975)
-        ci_lower = ate - z * ate_se
-        ci_upper = ate + z * ate_se
+        ci_lower = float(ate - z * ate_se)
+        ci_upper = float(ate + z * ate_se)
 
         return CausalEstimate(
             value=ate,
@@ -292,7 +293,7 @@ class UpliftModeler:
         from causal_toolkit.analysis.uplift import evaluate_uplift
 
         uplift = self.predict_uplift(X_test)
-        return evaluate_uplift(uplift, T_test, Y_test)
+        return dict(evaluate_uplift(uplift, T_test, Y_test))
 
     def plot_qini(self, X_test: np.ndarray, T_test: np.ndarray, Y_test: np.ndarray) -> Any:
         """Plot Qini curve."""
