@@ -13,11 +13,13 @@ from causal_toolkit.analysis.ab_test import (
     TestType,
     evaluate_uplift,
 )
+from causal_toolkit.analysis.did import DifferenceInDifferences, DiDResult
 from causal_toolkit.analysis.sensitivity import (
     SensitivityAnalyzer,
     SensitivityResult,
     run_sensitivity_suite,
 )
+from causal_toolkit.analysis.synthetic_control import SyntheticControl, SyntheticControlResult
 
 __all__ = [
     "ABTestAnalyzer",
@@ -25,9 +27,14 @@ __all__ = [
     "ABTestResult",
     "ABTestType",
     "Alternative",
+    "DifferenceInDifferences",
+    "DiDResult",
     "SensitivityAnalyzer",
     "SensitivityResult",
+    "SyntheticControl",
+    "SyntheticControlResult",
     "TestType",
     "evaluate_uplift",
     "run_sensitivity_suite",
 ]
+
