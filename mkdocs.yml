@@ -1,7 +1,7 @@
 site_name: "Causal Inference Toolkit"
-site_url: "https://yourusername.github.io/causal-toolkit"
-repo_url: "https://github.com/yourusername/causal-toolkit"
-repo_name: "causal-toolkit"
+site_url: "https://anujsingh-cse.github.io/causal-inference-toolkit/"
+repo_url: "https://github.com/anujsingh-cse/causal-inference-toolkit"
+repo_name: "causal-inference-toolkit"
 copyright: "Copyright &copy; 2025 Anuj Singh"
 
 theme:
@@ -107,11 +107,9 @@ extra:
     provider: mike
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/yourusername/causal-toolkit
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/yourusername
+      link: https://github.com/anujsingh-cse
     - icon: fontawesome/brands/linkedin
-      link: https://linkedin.com/in/yourusername
+      link: https://www.linkedin.com/in/anuj-singh-4b462641a/
 
 extra_css:
   - stylesheets/extra.css

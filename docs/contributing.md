@@ -5,8 +5,8 @@ Thank you for contributing!
 ## Development Setup
 
 ```bash
-git clone https://github.com/yourusername/causal-toolkit.git
-cd causal-toolkit
+git clone https://github.com/anujsingh-cse/causal-inference-toolkit.git
+cd causal-inference-toolkit
 pip install -e ".[dev,viz,notebooks]"
 pre-commit install
 ```

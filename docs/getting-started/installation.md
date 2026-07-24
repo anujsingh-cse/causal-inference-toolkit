@@ -25,8 +25,8 @@ pip install "causal-toolkit[dev,viz,notebooks]"
 ## Development Install
 
 ```bash
-git clone https://github.com/yourusername/causal-toolkit.git
-cd causal-toolkit
+git clone https://github.com/anujsingh-cse/causal-inference-toolkit.git
+cd causal-inference-toolkit
 pip install -e ".[dev,viz,notebooks]"
 ```
 

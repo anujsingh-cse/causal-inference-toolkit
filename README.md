@@ -3,8 +3,8 @@
 [![PyPI version](https://img.shields.io/pypi/v/causal-toolkit.svg)](https://pypi.org/project/causal-toolkit/)
 [![Python versions](https://img.shields.io/pypi/pyversions/causal-toolkit.svg)](https://pypi.org/project/causal-toolkit/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/yourusername/causal-toolkit/workflows/CI/badge.svg)](https://github.com/yourusername/causal-toolkit/actions)
-[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://yourusername.github.io/causal-toolkit)
+[![Build Status](https://github.com/anujsingh-cse/causal-inference-toolkit/workflows/CI/badge.svg)](https://github.com/anujsingh-cse/causal-inference-toolkit/actions)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://anujsingh-cse.github.io/causal-inference-toolkit/)
 
 **Production-ready causal inference toolkit** wrapping DoWhy/EconML with sensitivity analysis, A/B testing, uplift modeling, and counterfactual estimation — built for data scientists and AI engineers.
 
@@ -150,14 +150,13 @@ jupyter lab examples/notebooks/01_ihdp_demo.ipynb
 
 ## Documentation
 
-Full documentation at: **https://yourusername.github.io/causal-toolkit**
+Full documentation at: **https://anujsingh-cse.github.io/causal-inference-toolkit/**
 
 ### Key Pages
-- [Installation & Setup](https://yourusername.github.io/causal-toolkit/installation/)
-- [Quick Start](https://yourusername.github.io/causal-toolkit/quickstart/)
-- [Core Concepts](https://yourusername.github.io/causal-toolkit/concepts/)
-- [API Reference](https://yourusername.github.io/causal-toolkit/api/)
-- [Gallery](https://yourusername.github.io/causal-toolkit/gallery/)
+- [Installation & Setup](https://anujsingh-cse.github.io/causal-inference-toolkit/getting-started/installation/)
+- [Quick Start](https://anujsingh-cse.github.io/causal-inference-toolkit/getting-started/quickstart/)
+- [Core Concepts](https://anujsingh-cse.github.io/causal-inference-toolkit/concepts/causal-model/)
+- [API Reference](https://anujsingh-cse.github.io/causal-inference-toolkit/api/core/)
 
 ---
 
@@ -195,7 +194,7 @@ If you use this toolkit in research, please cite:
   author = {Anuj Singh},
   title = {Causal Inference Toolkit},
   year = {2025},
-  url = {https://github.com/yourusername/causal-toolkit}
+  url = {https://github.com/anujsingh-cse/causal-inference-toolkit}
 }
 ```
 

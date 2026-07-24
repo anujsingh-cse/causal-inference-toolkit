@@ -90,6 +90,6 @@ MIT License — see [LICENSE](https://github.com/anujsingh-cse/causal-inference-
   author = {Anuj Singh},
   title = {Causal Inference Toolkit},
   year = {2025},
-  url = {https://github.com/yourusername/causal-toolkit}
+  url = {https://github.com/anujsingh-cse/causal-inference-toolkit}
 }
 ```

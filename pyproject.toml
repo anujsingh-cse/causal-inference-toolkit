@@ -72,10 +72,10 @@ notebooks = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/causal-toolkit"
-Repository = "https://github.com/yourusername/causal-toolkit"
-Issues = "https://github.com/yourusername/causal-toolkit/issues"
-Documentation = "https://yourusername.github.io/causal-toolkit"
+Homepage = "https://anujsingh-cse.github.io/causal-inference-toolkit/"
+Repository = "https://github.com/anujsingh-cse/causal-inference-toolkit"
+Issues = "https://github.com/anujsingh-cse/causal-inference-toolkit/issues"
+Documentation = "https://anujsingh-cse.github.io/causal-inference-toolkit/"
 
 [tool.setuptools.packages.find]
 where = ["src"]
