@@ -6,7 +6,7 @@
 [![Build Status](https://github.com/anujsingh-cse/causal-inference-toolkit/workflows/CI/badge.svg)](https://github.com/anujsingh-cse/causal-inference-toolkit/actions)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://anujsingh-cse.github.io/causal-inference-toolkit/)
 
-**Production-ready causal inference toolkit** wrapping DoWhy/EconML with sensitivity analysis, A/B testing, uplift modeling, and counterfactual estimation — built for data scientists and AI engineers.
+**Production-ready causal inference toolkit** wrapping DoWhy/EconML with sensitivity analysis, quasi-experiments (Synthetic Control & DiD), A/B testing, uplift modeling, interactive web UI, and executive HTML report generation — built for data scientists and AI engineers.
 
 ---
 
@@ -17,32 +17,23 @@
 - **Config-driven pipelines**: YAML → identification → estimation → refutation → sensitivity
 - **Multiple estimators**: IPW, matching, doubly robust, double ML, causal forest, IV methods
 
+### Quasi-Experiments & Panel Data
+- **Synthetic Control Method (SCM)**: SLSQP weight optimization & placebo permutation tests
+- **Difference-in-Differences (DiD)**: 2x2 OLS, Two-Way Fixed Effects (TWFE) panel models, parallel trends testing, and dynamic event study trajectories
+
 ### Sensitivity Analysis
 - **Rosenbaum bounds** for binary treatment with matched data
 - **Cinelli-Hazlett** robustness values for linear models
 - **E-values** (VanderWeele & Ding) for unmeasured confounding
 - **TIPS curves** — visualize treatment-effect sensitivity contours
 
-### A/B Testing
-- **Frequentist**: t-tests, proportion z-tests, sequential testing (SPRT, mSPRT)
-- **Bayesian**: Beta-Binomial, Normal-Normal with ROPE & expected loss
-- **Power analysis** & sample size calculation
-- **Multiple testing**: Bonferroni, Benjamini-Hochberg FDR
+### Interactive Web Dashboard & Executive Reporting
+- **Streamlit Web UI**: Zero-code interactive dashboard (`causal-toolkit app`)
+- **Executive HTML Reports**: Standalone report generation (`causal-toolkit report` / `CausalReportGenerator`)
 
-### Uplift Modeling
-- **Metalearners**: T/S/X/R/DR-learners, Causal Forest
-- **Evaluation**: Qini coefficient, AUUC, gain/decile charts
-- **Targeting simulation**: personalize treatment decisions
-
-### Visualization
-- **Causal DAGs** with backdoor path highlighting & adjustment sets
-- **Forest plots** for meta-analysis/subgroup effects
-- **Love plots** for covariate balance diagnostics
-- **Sensitivity contours**, **Qini curves**, **counterfactual distributions**
-
-### Counterfactuals
-- G-computation, TMLE for individual effect estimation
-- Uncertainty quantification via bootstrap
+### A/B Testing & Uplift Modeling
+- **Frequentist & Bayesian A/B**: t-tests, z-tests, SPRT, mSPRT, Beta-Binomial, Normal-Normal
+- **Uplift Metalearners**: T/S/X/R/DR-learners, Causal Forest, Qini & AUUC metrics
 
 ---
 
@@ -50,9 +41,29 @@
 
 ```bash
 pip install causal-toolkit
-# Or with optional dependencies
-pip install "causal-toolkit[dev,viz,notebooks]"
+
+# Or with web dashboard optional dependencies
+pip install "causal-toolkit[app,dev,viz]"
 ```
+
+---
+
+## Interactive Web Dashboard
+
+Launch the zero-code interactive dashboard with a single command:
+
+```bash
+causal-toolkit app
+```
+
+*(Or run directly via Streamlit: `streamlit run src/causal_toolkit/demo/app.py`)*
+
+The dashboard provides 5 interactive tabs:
+1. 📊 **Data Explorer**: Dataset selection (`ihdp`, `lalonde`, `synthetic`) or CSV upload.
+2. 🎯 **Causal Estimation**: Interactive backdoor identification & estimation.
+3. 🔍 **Sensitivity Analysis**: Robustness Value & E-value computations.
+4. 📈 **Quasi-Experiments**: Synthetic Control & Difference-in-Differences panel analysis.
+5. 📄 **Executive Report Export**: One-click standalone HTML report download.
 
 ---
 
@@ -61,75 +72,50 @@ pip install "causal-toolkit[dev,viz,notebooks]"
 ### Python API
 
 ```python
-from causal_toolkit import CausalModel, DoWhyWrapper, SensitivityAnalyzer
+from causal_toolkit import CausalModel, DoWhyWrapper, SensitivityAnalyzer, DifferenceInDifferences, CausalReportGenerator
 from causal_toolkit.core.base import EstimatorType, IdentificationStrategy
 
-# Load your data
+# 1. Core Estimation
 df = pd.read_csv("your_data.csv")
-
-# Define causal model
-model = CausalModel(
-    data=df,
-    treatment="treatment",
-    outcome="outcome",
-    common_causes=["age", "income", "education"]
-)
-
-# Identify and estimate
+model = CausalModel(data=df, treatment="treatment", outcome="outcome", common_causes=["age", "income"])
 dowhy = DoWhyWrapper(model)
 estimand = dowhy.identify(IdentificationStrategy.BACKDOOR)
 estimate = dowhy.estimate(EstimatorType.DOUBLY_ROBUST)
+print(f"ATE: {estimate.value:.4f}")
 
-print(f"ATE: {estimate.value:.4f} [{estimate.ci_lower:.4f}, {estimate.ci_upper:.4f}]")
+# 2. Quasi-Experiments (Difference-in-Differences)
+did = DifferenceInDifferences()
+did_res = did.estimate_2x2(df, outcome_col="y", treatment_col="t", post_col="post")
+print(did_res.summary())
 
-# Sensitivity analysis
+# 3. Sensitivity Analysis
 analyzer = SensitivityAnalyzer(model)
-analyzer.rosenbaum_bounds(estimate)
 analyzer.cinelli_hazlett(estimate)
 analyzer.e_value(estimate)
 print(analyzer.summarize())
+
+# 4. Generate Executive HTML Report
+gen = CausalReportGenerator(title="Executive Causal Analysis")
+gen.save_report("report.html", estimate_summary={"value": estimate.value, "ci_lower": estimate.ci_lower, "ci_upper": estimate.ci_upper})
 ```
 
-### CLI
+### Command-Line Interface (CLI)
 
 ```bash
+# Launch Streamlit web app
+causal-toolkit app
+
 # Estimate causal effect from config
 causal-toolkit estimate --config config.yaml --data data.csv
 
-# Sensitivity analysis
-causal-toolkit sensitivity --data data.csv --treatment T --outcome Y --confounders X1 X2
+# Run Synthetic Control analysis
+causal-toolkit synthetic-control --data panel.csv --unit region --time year --outcome sales --treated-unit "West" --treatment-time 2020
 
-# A/B test
-causal-toolkit ab_test --data exp.csv --variant group --outcome converted --control A --treatment B
+# Run Difference-in-Differences estimation
+causal-toolkit did --data panel.csv --outcome sales --treatment treated --post post_period
 
-# Uplift modeling
-causal-toolkit uplift --data data.csv --treatment T --outcome Y --covariates X1 X2 --model causal_forest
-
-# Visualize causal graph
-causal-toolkit graph --config dag.yaml --render plotly
-```
-
-### Configuration (YAML)
-
-```yaml
-pipeline:
-  identification:
-    strategy: backdoor
-    adjustment_set: ["age", "income", "education"]
-    graph: dag.dot
-  estimation:
-    method: causal_forest
-    params:
-      n_estimators: 500
-      min_samples_leaf: 10
-  refutation:
-    - placebo_treatment
-    - random_common_cause
-    - data_subset
-    - simulated_confounder
-  sensitivity:
-    method: cinelli_hazlett
-    benchmark_covariates: ["age", "income"]
+# Generate Executive HTML report
+causal-toolkit report --data data.csv --treatment T --outcome Y --out executive_report.html
 ```
 
 ---
@@ -152,12 +138,6 @@ jupyter lab examples/notebooks/01_ihdp_demo.ipynb
 
 Full documentation at: **https://anujsingh-cse.github.io/causal-inference-toolkit/**
 
-### Key Pages
-- [Installation & Setup](https://anujsingh-cse.github.io/causal-inference-toolkit/getting-started/installation/)
-- [Quick Start](https://anujsingh-cse.github.io/causal-inference-toolkit/getting-started/quickstart/)
-- [Core Concepts](https://anujsingh-cse.github.io/causal-inference-toolkit/concepts/causal-model/)
-- [API Reference](https://anujsingh-cse.github.io/causal-inference-toolkit/api/core/)
-
 ---
 
 ## Architecture
@@ -166,7 +146,9 @@ Full documentation at: **https://anujsingh-cse.github.io/causal-inference-toolki
 src/causal_toolkit/
 ├── core/           # Base types: CausalModel, CausalEstimand, CausalEstimate
 ├── wrappers/       # DoWhyWrapper, EconMLWrapper, UpliftModeler
-├── analysis/       # SensitivityAnalyzer, ABTestAnalyzer
+├── analysis/       # SensitivityAnalyzer, ABTestAnalyzer, SyntheticControl, DifferenceInDifferences
+├── reports/        # CausalReportGenerator (HTML executive reporting)
+├── demo/           # Streamlit interactive web application dashboard
 ├── visualization/  # ForestPlot, LovePlot, SensitivityPlot, UpliftPlot, CausalGraphVisualizer
 ├── cli/            # Typer-based command line interface
 └── utils/          # Data loading, preprocessing, synthetic data
@@ -178,9 +160,9 @@ src/causal_toolkit/
 
 1. Fork the repo
 2. Create feature branch: `git checkout -b feature/amazing-thing`
-3. Install dev deps: `pip install -e ".[dev]"`
+3. Install dev deps: `pip install -e ".[app,dev]"`
 4. Run tests: `pytest`
-5. Run lint: `ruff check . && mypy src/causal_toolkit`
+5. Run lint: `ruff check . && mypy src/`
 6. Submit PR
 
 ---
@@ -203,13 +185,3 @@ If you use this toolkit in research, please cite:
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-## Acknowledgments
-
-- **DoWhy** (Microsoft) — causal identification & refutation
-- **EconML** (Microsoft) — heterogeneous treatment effects
-- **Cinelli & Hazlett (2020)** — sensitivity analysis framework
-- **VanderWeele & Ding (2017)** — E-values
-- **Rosenbaum (2002)** — sensitivity bounds for matched studies
