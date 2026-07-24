@@ -17,7 +17,7 @@ import pandas as pd
 from scipy import stats
 
 
-class TestType(str, Enum):
+class ABTestType(str, Enum):
     """Type of A/B test."""
 
     PROPORTION = "proportion"  # Conversion rates
@@ -25,6 +25,9 @@ class TestType(str, Enum):
     REVENUE = "revenue"  # Revenue per user (often zero-inflated)
     RATIO = "ratio"  # Ratio metrics
 
+
+# Backward-compatible alias (renamed to avoid pytest collection warning)
+TestType = ABTestType
 
 class Alternative(str, Enum):
     """Alternative hypothesis."""
@@ -82,7 +85,7 @@ class ABTestData:
 class ABTestResult:
     """Result of A/B test."""
 
-    test_type: TestType
+    test_type: ABTestType
     alternative: Alternative
 
     # Estimates
@@ -153,7 +156,7 @@ class ABTestAnalyzer:
         ci_upper = diff + z * se
 
         return ABTestResult(
-            test_type=TestType.PROPORTION,
+            test_type=ABTestType.PROPORTION,
             alternative=alternative,
             estimate_a=prop_a,
             estimate_b=prop_b,
@@ -197,7 +200,7 @@ class ABTestAnalyzer:
         ci_upper = diff + t_crit * se
 
         return ABTestResult(
-            test_type=TestType.MEAN,
+            test_type=ABTestType.MEAN,
             alternative=alternative,
             estimate_a=data.mean_a,
             estimate_b=data.mean_b,
@@ -228,7 +231,7 @@ class ABTestAnalyzer:
         median_diff = np.median(diffs)
 
         return ABTestResult(
-            test_type=TestType.MEAN,
+            test_type=ABTestType.MEAN,
             alternative=alternative,
             estimate_a=np.median(data_a),
             estimate_b=np.median(data_b),
@@ -376,7 +379,7 @@ class ABTestAnalyzer:
         expected_loss_b = np.mean(np.maximum(samples_b - samples_a, 0))
 
         return ABTestResult(
-            test_type=TestType.PROPORTION,
+            test_type=ABTestType.PROPORTION,
             alternative=Alternative.TWO_SIDED,
             estimate_a=data.rate_a,
             estimate_b=data.rate_b,
@@ -495,7 +498,7 @@ class ABTestAnalyzer:
     def analyze(
         self,
         data: ABTestData,
-        test_type: TestType = TestType.PROPORTION,
+        test_type: ABTestType = ABTestType.PROPORTION,
         method: str = "frequentist",
         **kwargs,
     ) -> ABTestResult:
@@ -508,7 +511,7 @@ class ABTestAnalyzer:
             method: "frequentist", "bayesian", "sequential"
         """
         if method == "bayesian":
-            if test_type == TestType.PROPORTION:
+            if test_type == ABTestType.PROPORTION:
                 return self.bayesian_proportion(data, **kwargs)
             else:
                 return self.bayesian_normal(data, **kwargs)
@@ -535,7 +538,7 @@ class ABTestAnalyzer:
                 # (would need to extend ABTestResult)
             )
         else:
-            if test_type == TestType.PROPORTION:
+            if test_type == ABTestType.PROPORTION:
                 return self.proportion_ztest(data, **kwargs)
             else:
                 return self.ttest(data, **kwargs)
@@ -547,13 +550,13 @@ class ABTestAnalyzer:
         outcome_col: str,
         variant_a: str,
         variant_b: str,
-        test_type: TestType = TestType.PROPORTION,
+        test_type: ABTestType = ABTestType.PROPORTION,
     ) -> ABTestData:
         """Create ABTestData from DataFrame."""
         a_data = df[df[variant_col] == variant_a][outcome_col]
         b_data = df[df[variant_col] == variant_b][outcome_col]
 
-        if test_type == TestType.PROPORTION:
+        if test_type == ABTestType.PROPORTION:
             return ABTestData(
                 n_a=len(a_data), successes_a=a_data.sum(), n_b=len(b_data), successes_b=b_data.sum()
             )

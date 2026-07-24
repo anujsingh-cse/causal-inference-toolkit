@@ -8,6 +8,7 @@ from causal_toolkit.analysis.ab_test import (
     ABTestAnalyzer,
     ABTestData,
     ABTestResult,
+    ABTestType,
     Alternative,
     TestType,
     evaluate_uplift,
@@ -22,6 +23,7 @@ __all__ = [
     "ABTestAnalyzer",
     "ABTestData",
     "ABTestResult",
+    "ABTestType",
     "Alternative",
     "SensitivityAnalyzer",
     "SensitivityResult",
@@ -29,3 +31,4 @@ __all__ = [
     "evaluate_uplift",
     "run_sensitivity_suite",
 ]
+

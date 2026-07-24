@@ -45,10 +45,10 @@ class SensitivityResult:
                 f"conclusion_reversed={self.conclusion_reversed}"
             )
         elif self.method == "cinelli_hazlett":
-            return (
-                f"Cinelli-Hazlett: RV={self.robustness_value:.4f}, "
-                f"R²_yz={self.r2_yz_dx:.4f}, R²_zd={self.r2_zd_x:.4f}"
-            )
+            rv_str = f"RV={self.robustness_value:.4f}" if self.robustness_value is not None else "RV=N/A"
+            r2_yz_str = f"R²_yz={self.r2_yz_dx:.4f}" if self.r2_yz_dx is not None else "R²_yz=N/A"
+            r2_zd_str = f"R²_zd={self.r2_zd_x:.4f}" if self.r2_zd_x is not None else "R²_zd=N/A"
+            return f"Cinelli-Hazlett: {rv_str}, {r2_yz_str}, {r2_zd_str}"
         elif self.method == "evalue":
             return f"E-value: {self.e_value:.3f} (CI: {self.e_value_ci:.3f})"
         return f"{self.method}: conclusion_reversed={self.conclusion_reversed}"

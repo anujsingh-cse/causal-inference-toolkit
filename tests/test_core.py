@@ -10,7 +10,7 @@ from causal_toolkit.analysis.ab_test import (
     ABTestAnalyzer,
     ABTestData,
     ABTestResult,
-    TestType,
+    ABTestType,
     evaluate_uplift,
 )
 from causal_toolkit.analysis.sensitivity import SensitivityAnalyzer, SensitivityResult
@@ -119,7 +119,7 @@ class TestABTest:
         data = ABTestData(n_a=1000, successes_a=100, n_b=1000, successes_b=120)
         result = self.analyzer.proportion_ztest(data)
         assert isinstance(result, ABTestResult)
-        assert result.test_type == TestType.PROPORTION
+        assert result.test_type == ABTestType.PROPORTION
         assert 0 <= result.p_value <= 1
         assert result.ci_lower < result.ci_upper
 
@@ -127,7 +127,7 @@ class TestABTest:
         data = ABTestData(n_a=100, sum_a=500, sum_sq_a=3000, n_b=100, sum_b=550, sum_sq_b=3500)
         result = self.analyzer.ttest(data)
         assert isinstance(result, ABTestResult)
-        assert result.test_type == TestType.MEAN
+        assert result.test_type == ABTestType.MEAN
         assert result.estimate_a == 5.0
         assert result.estimate_b == 5.5
 

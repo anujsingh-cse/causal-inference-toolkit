@@ -61,8 +61,6 @@ def estimate(
 
     # Identify
     try:
-        from causal_toolkit.core.base import IdentificationStrategy
-
         strategy = IdentificationStrategy(
             cfg.get("pipeline", {}).get("identification", {}).get("strategy", "backdoor")
         )
@@ -206,7 +204,7 @@ def ab_test(
     out: Path = typer.Option("./ab_test", "--out", "-o", help="Output directory"),
 ):
     """Run A/B test analysis."""
-    from causal_toolkit.analysis.ab_test import ABTestAnalyzer, TestType
+    from causal_toolkit.analysis.ab_test import ABTestAnalyzer, ABTestType
 
     typer.echo(f"Loading data from {data}...")
     df = pd.read_csv(data)
@@ -218,12 +216,12 @@ def ab_test(
         outcome_col,
         variant_a,
         variant_b,
-        TestType.PROPORTION if test_type == "proportion" else TestType.MEAN,
+        ABTestType.PROPORTION if test_type == "proportion" else ABTestType.MEAN,
     )
 
     typer.echo(f"Running {method} {test_type} test...")
     result = analyzer.analyze(
-        ab_data, TestType.PROPORTION if test_type == "proportion" else TestType.MEAN, method
+        ab_data, ABTestType.PROPORTION if test_type == "proportion" else ABTestType.MEAN, method
     )
 
     typer.echo(f"\n{result}")
